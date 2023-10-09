@@ -45,49 +45,58 @@
 #include "mcp_can.h"
 unsigned char len = 0;
 unsigned char buf[8];
-byte GearPos = 0;
-byte StickCode = 0;
-byte SportsShift = 0;
+char serialInputBuffer[500];
+int serialInputBuffercount = 0;
+int OdoCount = 0;
 int Throttle = 0;
 int RPM = 0;
 int Rpm = 0;
 int Speed = 0;
-byte Brakes = 0;
-double SteeringAngle = 0;
-byte sendprimarycan = 0;
-char serialinputbuffer[500];
-int serialinputbuffercount = 0;
+double steeringAngle = 0;
+byte sendPrimaryCan = 0;
+byte gearPosition = 0;
+byte stickCode = 0;
+byte serviceBrakes = 0;
+byte performanceMode = 0;
 MCP_CAN CAN(10);
 //////////////////////////////////////////////////////////////////////////////
 void setup() 
 {
+  //////////////////////////////////////////
   // put your setup code here, to run once:
   Serial.begin(115200);
-  memset(&serialinputbuffer[0], 0, sizeof(serialinputbuffer)); //init serial buffer
+  memset(&serialInputBuffer[0], 0, sizeof(serialInputBuffer)); //init serial buffer
   //////////////////////////////////////////////////////////////
 START_INIT:
   if (CAN_OK == CAN.begin(CAN_500KBPS))                  // init can bus : baudrate = 500k
   {
-    Serial.println("HS CAN Shield Startup OK");
+    Serial.println("CAN Interface Up");
   }
   else
   {
-    Serial.println("HS CAN Shield Failed Startup");
-    Serial.println("HS CAN Shield Retry Startup");
-    delay(100);
+    Serial.println("CAN Interface Down");
+    Serial.println("CAN Interface Down, Retry");
+    delay(125);
     goto START_INIT;
   }
 }
 /////////////////////////////////////////////////////////////////////////////
+// Speedometer Message
+// Tachometer Message
+// Odometer Count
+// Engine Coolant Temp
+// Engine Oil Temp
+// Warning Lights
+// 
 void loop() {
   if (CAN_MSGAVAIL == CAN.checkReceive())           // check if data coming
   {
     CAN.readMsgBuf(&len, buf);    // read data,  len: data length, buf: data buf
-    int NodeID = CAN.getCanId();
-    if (sendprimarycan == 1)
+    int ArbitrationIdentifier = CAN.getCanId();
+    if (sendPrimaryCan == 1)
     {
       Serial.print("CAN:");
-      Serial.print(NodeID);
+      Serial.print(ArbitrationIdentifier);
       Serial.print(",");
       for (int i = 0; i < len; i++) // print the data
       {
@@ -96,11 +105,11 @@ void loop() {
       }
       Serial.println();
     }
-    //////////////////////////
-    if (NodeID == 0x85) // YAW RATE SENSOR
+    //////////////////////////////////////// DELETE
+    if (ArbitrationIdentifier == 0x85) // YAW RATE SENSOR
     {
       Serial.print("CAN:");
-      Serial.print(NodeID);
+      Serial.print(ArbitrationIdentifier);
       Serial.print(",");
       for (int i = 0; i < len; i++) // print the data
       {
@@ -109,8 +118,8 @@ void loop() {
       }
       Serial.println();
     }
-    ///////////////////////////////////////////////////////
-    if (NodeID == 0x90) // STEERING ANGLE SENSOR
+    //////////////////////////////////////////// DELETE
+    if (ArbitrationIdentifier == 0x90) // STEERING ANGLE SENSOR
     {
       int MultiVal = buf[0];
       int FineVal = buf[1];
@@ -126,9 +135,11 @@ void loop() {
       }
       Serial.print("Steering:");
       Serial.println(TotalVal);
-    }
-    ///////////////////////////////////////////////////////
-    if (NodeID == 0x12D) // Powertrain Control Module EngineSpdRateOfChange 12D 8 EngineSpeedRateOfChange AcceleratorPedalPosition  AcceleratorPedalPosition  DSC On/Off Flag EngineSpeed EngineSpeed Cruise Control On BrakeStatus
+    }  
+    // Powertrain Control Module  Engine Torque Calculation 0x97  8 IndicatedEngineTorque IndicatedEngineTorque FrictionLoss  FrictionLoss  ActualEngineTorque  ActualEngineTorque  DriverDemandedTorque  DriverDemandedTorque
+    // Powertrain Control Module ABSConfigShiftMap FC  8 Traction Control, EBD_PCM 
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    if (ArbitrationIdentifier == 0x12D) // Powertrain Control Module EngineSpdRateOfChange 12D 8 EngineSpeedRateOfChange AcceleratorPedalPosition  AcceleratorPedalPosition  DSC On/Off Flag EngineSpeed EngineSpeed Cruise Control On BrakeStatus
     {
       //301X3 = Throttle
       // 0x12D byte 2 AceceleratorPedalPosition
@@ -151,22 +162,22 @@ void loop() {
         Serial.println(RPM);
       }
 
-      if (Brakes != buf[7])
+      if (serviceBrakes != buf[7])
       {
-        Brakes = buf[7];
-        if (Brakes == 1)
+        serviceBrakes = buf[7];
+        if (serviceBrakes == 1)
         {
-          Serial.println("Brakes:ON");
+          Serial.println("serviceBrakes:ON");
         } else {
-          Serial.println("Brakes:OFF");
+          Serial.println("serviceBrakes:OFF");
         }
       }
     }
-    ///////////////////////////////////////////////////////
-    if (NodeID == 0x207) // Powertrain Control Module EngineRPM 207 8 EngineRPM EngineRPM EngineSpeedRateOfChange EngineSpeedRateOfChange VehicleSpeed  VehicleSpeed  ThrottlePositionManifold  ThrottlePositionRateOfChange
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    if (ArbitrationIdentifier == 0x207) // Powertrain Control Module EngineRPM 207 8 EngineRPM EngineRPM EngineSpeedRateOfChange EngineSpeedRateOfChange VehicleSpeed  VehicleSpeed  ThrottlePositionManifold  ThrottlePositionRateOfChange
     {
-      int Valx1 = (int)buf[0]; // VEHICLE SPEED
-      int Valx2 = (int)buf[1]; // VEHICLE SPEED
+      int Valx1 = (int)buf[0]; // ENGINE RPM
+      int Valx2 = (int)buf[1]; // ENGINE RPM
       int Valx5 = (int)buf[4]; // VEHICLE SPEED
       int Valx6 = (int)buf[5]; // VEHICLE SPEED
       float tmpSpeed = (Valx5 + (Valx6 / 255)) * 2;
@@ -175,6 +186,9 @@ void loop() {
         Speed = tmpSpeed;
         Serial.print("Speed:");
         Serial.println(Speed);
+        unsigned char msgSpeed[8] = {Speed, 0, 0, 0, 0, 0, 0, 0}; // need to scale and convert Speed to match
+        CAN.sendMsgBuf(0xABC, 0, 8, msgSpeed);
+        Serial.println("Engine RPM Signal sent.\r\n");
       }
       float tmpRpm = (Valx1 + (Valx2 / 255)) * 2;
       if (tmpRpm != Rpm)
@@ -182,74 +196,72 @@ void loop() {
         Rpm = tmpRpm;
         Serial.print("RPM:");
         Serial.println(Rpm);      
-        unsigned char msgtemp[8] = {2, 1, 15, 0, 0, 0, 0, 0};
-        CAN.sendMsgBuf(0x7DF, 0, 8, msgtemp);
-        Serial.println("CAN MESSAGE SENT FOR INTAKE TEMP");
+        unsigned char msgRpm[8] = {Rpm, 0, 0, 0, 0, 0, 0, 0}; // need to scale and convert Rpm to match
+        CAN.sendMsgBuf(0xABC, 0, 8, msgSpeed);
+        Serial.println("Engine RPM Signal sent.\r\n");
       }
     }
-    ///////////////////////////////////////////////////////
-    if (NodeID == 0x230)
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    if (ArbitrationIdentifier == 0x230) //Powertrain Control Module  Transmission Mode 230 8 Transmission Gear Pos TargetgearPositionition  ActualgearPositionition  TorqueConverter   -  -   -  Trans Mode Fault Warn
     {
       int Valx2 = buf[1];
-      int tmpGearPos = 0;
+      int tmpgearPosition = 0;
       if (Valx2 == 255)
       {
-        tmpGearPos = 1;
+        tmpgearPosition = 1;
       }
       else if (Valx2 == 149)
       {
-        tmpGearPos = 2;
+        tmpgearPosition = 2;
       }
       else if (Valx2 == 97)
       {
-        tmpGearPos = 3;
+        tmpgearPosition = 3;
       }
       else if (Valx2 == 72)
       {
-        tmpGearPos = 4;
+        tmpgearPosition = 4;
       }
       else if (Valx2 == 55)
       {
-        tmpGearPos = 5;
+        tmpgearPosition = 5;
       }
       else if (Valx2 == 44)
       {
-        tmpGearPos = 6;
+        tmpgearPosition = 6;
       }
-      if (tmpGearPos != GearPos)
+      if (tmpgearPosition != gearPosition)
       {
-        GearPos = tmpGearPos;
+        gearPosition = tmpgearPosition;
         Serial.print("transgear:");
-        Serial.println(GearPos);
+        Serial.println(gearPosition);
       }
     }
-    ///////////////////////////////////////////////////////
-    if (NodeID == 0x3E9)
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    if (ArbitrationIdentifier == 0x3E9) //Transmission Control Module  TrransmissionActualGear 3E9 8 GearActualAndSelected TransmissionShiftMap Normal Mode, Cruise Mode, Hot Mode, Traction Control Mode, Hill/Trailer Towing Mode, Performance Mode  TransmissionOilTemp TCM MIL Status  Performance Mode Indicator  IdleGearboxLoss GeaerPositionTarget TorqueConverterMultiplier
     {
-
-      if (StickCode != buf[0])
+      if (stickCode != buf[0])
       {
-        StickCode = buf[0];
+        stickCode = buf[0];
         Serial.print("gearstickpos:");
-        Serial.println(StickCode);
+        Serial.println(stickCode);
       }
     }
-    ///////////////////////////////////////////////////////
-    if (NodeID == 0x437)
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    if (ArbitrationIdentifier == 0x437) //InstrumentCluster  FuelData HandbrakeState 437 8 FuelLevelDamped FuelLevelInstant  HandbrakeStatus/LowFuelIndicator/FuelSenderFault/ParkLights/MILStrategyOn/  ClusterVoltage  IlluminationLevelLow  IlluminationLevelHigh PRNDL?  MaxFuelLevel
     {
       Serial.print("fuelstatus:");
       Serial.print(buf[0]);
       Serial.print(",");
       Serial.println(buf[1]);
     }
-    ///////////////////////////////////////////////////////
-    if (NodeID == 0x4B0)
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    if (ArbitrationIdentifier == 0x4B0) //Antilock Brake Module  Wheel Speed Sensor  4B0 8 WheelSpeedFrontLeft Units:km/h   Offset:0;Multi:1;Div:100   0xFFFE=Initialization in progress   0xFFFF=Wheel Speed Faulted        WheelSpeedFrontLeft Units:km/h  Offset:0;Multi:1;Div:100  0xFFFE=Initialization in progress  0xFFFF=Wheel Speed Faulted       FrontRightWheelSpeed  Units:km/h  Offset:0;Multi:1;Div:100  0xFFFE=Initialization in progress  0xFFFF=Wheel Speed Faulted   FrontRightWheelSpeed  RearLeftWheelSpeed  RearLeftWheelSpeed  RightRearWheelSpeed RightRearWheelSpeed
     {
       int FrontLeft = (buf[0] * 255) + buf[1];
       int FrontRight = (buf[2] * 255) + buf[3];
       int RearLeft = (buf[4] * 255) + buf[5];
       int RearRight = (buf[6] * 255) + buf[7];
-
       Serial.print("wheelspeed:");
       Serial.print(FrontLeft);
       Serial.print(",");
@@ -259,12 +271,18 @@ void loop() {
       Serial.print(",");
       Serial.println(RearRight);
     }
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Powertrain Control Module  Cruise  425 8 Cruise Control On 0x01  CruiseSetSpeed  CruiseSetSpeed  BoostPressue  BoostPressue  Fuel Level  InstantFuelConsumption  InstantFuelConsumption
+    // Powertrain Control Module EngineDtcParameters 427 8 EngineCoolantTemperature  Air Conditioner Pressure  Air Conditioner Pressure  Battery Voltage Odometer Count  MIL Lamp  Comms Fault EngineSpeedCount
+    // Powertrain Control Module Cruise  425 8 Cruise Control On 0x01  CruiseSetSpeed  CruiseSetSpeed  BoostPressue  BoostPressue  Fuel Level  InstantFuelConsumption  InstantFuelConsumption
+    // Powertrain Control Module EngineDtcParameters 427 8 EngineCoolantTemperature  Air Conditioner Pressure  Air Conditioner Pressure  Battery Voltage Odometer Count  MIL Lamp  Comms Fault EngineSpeedCount
+    // Powertrain Control Module Odometer  4C0 8 Odometer  Odometer  Odometer
     ///////////////////////////////////////////////////////
-    //PCM_DiagSig_Tx // OBD CAN ID
-    if (NodeID == 0x7E8)
+    //PCM_DiagSig_Tx // 
+    if (ArbitrationIdentifier == 0x7E8)
     {
       Serial.print("CAN:");
-      Serial.print(NodeID);
+      Serial.print(ArbitrationIdentifier);
       Serial.print(",");
       for (int i = 0; i < len; i++) // print the data
       {
@@ -274,11 +292,11 @@ void loop() {
       Serial.println();
     }
     ///////////////////////////////////////////////////////
-    //TCM_DiagSig_Tx OBD CAN ID
-    if (NodeID == 0x7E9)
+    //TCM_DiagSig_Tx //
+    if (ArbitrationIdentifier == 0x7E9)
     {
       Serial.print("CAN:");
-      Serial.print(NodeID);
+      Serial.print(ArbitrationIdentifier);
       Serial.print(",");
       for (int i = 0; i < len; i++) // print the data
       {
@@ -300,15 +318,15 @@ void loop() {
       {
         ///////////////////////////////////////////////////////
         //Action then clear input buffer.
-        if (strcmp(serialinputbuffer, "SENDMAINCAN") == 0)
+        if (strcmp(serialInputBuffer, "SENDMAINCAN") == 0)
         {
-          sendprimarycan = 1;
+          sendPrimaryCan = 1;
         }
-        else if (strcmp(serialinputbuffer, "STOPMAINCAN") == 0)
+        else if (strcmp(serialInputBuffer, "STOPMAINCAN") == 0)
         {
-          sendprimarycan = 0;
+          sendPrimaryCan = 0;
         }
-        else if (strcmp(serialinputbuffer, "OBDCOOLANT") == 0)
+        else if (strcmp(serialInputBuffer, "OBDCOOLANT") == 0)
         {
           ///////////////////////////////////////////////////////
           //obd = additional bytes, current data/freeframe,PID,3-7 unused
@@ -318,36 +336,36 @@ void loop() {
 
           Serial.println("CAN MESSAGE SENT FOR OBD COOLANT");
         }
-        else if (strcmp(serialinputbuffer, "OBDINTAKETEMP") == 0)
+        else if (strcmp(serialInputBuffer, "OBDINTAKETEMP") == 0)
         {
           unsigned char msgtemp[8] = {2, 1, 15, 0, 0, 0, 0, 0};
           CAN.sendMsgBuf(0x7DF, 0, 8, msgtemp);
           Serial.println("CAN MESSAGE SENT FOR INTAKE TEMP");
         }
-        else if (strcmp(serialinputbuffer, "OBDINTAKEPSI") == 0)
+        else if (strcmp(serialInputBuffer, "OBDINTAKEPSI") == 0)
         {
           unsigned char msgtemp[8] = {2, 1, 11, 0, 0, 0, 0, 0};
           CAN.sendMsgBuf(0x7DF, 0, 8, msgtemp);
           Serial.println("CAN MESSAGE SENT FOR OBD COOLANT");
         }
-        else if (strcmp(serialinputbuffer, "OBDAIRTEMP") == 0)
+        else if (strcmp(serialInputBuffer, "OBDAIRTEMP") == 0)
         {
           unsigned char msgtemp[8] = {2, 1, 70, 0, 0, 0, 0, 0};
           CAN.sendMsgBuf(0x7DF, 0, 8, msgtemp);
           Serial.println("CAN MESSAGE SENT FOR OBD AMBIENT AIR TEMP");
         }
-        else if (strcmp(serialinputbuffer, "OBDECUVOLTAGE") == 0)
+        else if (strcmp(serialInputBuffer, "OBDECUVOLTAGE") == 0)
         {
           unsigned char msgtemp[8] = {2, 1, 66, 0, 0, 0, 0, 0};
           CAN.sendMsgBuf(0x7DF, 0, 8, msgtemp);
           Serial.println("CAN MESSAGE SENT FOR OBD ECU VOLTAGE");
         }
-        else if (strcmp(serialinputbuffer, "GetStatus") == 0)
+        else if (strcmp(serialInputBuffer, "GetStatus") == 0)
         {
           getstatus();
         }
-        memset(&serialinputbuffer[0], 0, sizeof(serialinputbuffer));
-        serialinputbuffercount = 0;
+        memset(&serialInputBuffer[0], 0, sizeof(serialInputBuffer));
+        serialInputBuffercount = 0;
         ///////////////////////////////////////////////////////
       }
     }
@@ -355,23 +373,23 @@ void loop() {
     {    
       ///////////////////////////////////////////////////////
       //Valid characters.
-      serialinputbuffer[serialinputbuffercount] = byteread;
-      serialinputbuffercount++;
+      serialInputBuffer[serialInputBuffercount] = byteread;
+      serialInputBuffercount++;
     }
   }
 }
 void getstatus()
 {
   Serial.print("transgear:");
-  Serial.println(GearPos);
+  Serial.println(gearPosition);
   Serial.print("gearstickpos:");
-  Serial.println(StickCode);
+  Serial.println(stickCode);
   ///////////////////////////////////////////////////////
-  if (Brakes == 1)
+  if (serviceBrakes == 1)
   {
-    Serial.println("Brakes:ON");
+    Serial.println("serviceBrakes:ON");
   } else {
-    Serial.println("Brakes:OFF");
+    Serial.println("serviceBrakes:OFF");
   }
 }
 ///////////////////////////////////////////////////////
