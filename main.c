@@ -65,6 +65,8 @@
 // ////             \/              \/    \/          \/     \/
 // //// 
 // ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+int Speed;
+int Rpm;
 long unsigned int rxId;                         //
 unsigned char len = 0;                          //
 unsigned char rxBuf[8];                         //
@@ -86,7 +88,7 @@ void setup()
   Serial.begin(115200);                                        // start serial @ 115200 Baud rate
   if(CAN0.begin(MCP_ANY, CAN_500KBPS, MCP_16MHZ) == CAN_OK)    // Initialize MCP2515 running at 16MHz with a baudrate of 500kb/s and the masks and filters disabled.
   {
-      serial.println("Barra in a Beamer // MCP2515 Initialized. ");
+      Serial.println("Barra in a Beamer // MCP2515 Initialized. ");
   }
   else
   {
@@ -130,10 +132,11 @@ void loop()
             if (rxId == 0x207) // Powertrain Control Module EngineRPM 207 8 EngineRPM EngineRPM EngineSpeedRateOfChange EngineSpeedRateOfChange VehicleSpeed  VehicleSpeed  ThrottlePositionManifold  ThrottlePositionRateOfChange
             {
                 //////////////////////////////////////////////////////////////////
-                int Valx0 = (int)buf[0]; // ENGINE RPM
-                int Valx1 = (int)buf[1]; // ENGINE RPM
-                int Valx4 = (int)buf[4]; // VEHICLE SPEED
-                int Valx5 = (int)buf[5]; // VEHICLE SPEED
+                // 
+                int Valx0 = (int)rxBuf[0]; // ENGINE RPM
+                int Valx1 = (int)rxBuf[1]; // ENGINE RPM
+                int Valx4 = (int)rxBuf[4]; // VEHICLE SPEED
+                int Valx5 = (int)rxBuf[5]; // VEHICLE SPEED
                 //////////////////////////////////////////////////////////////////
                 float tmpSpeed = (Valx4 + (Valx5 / 255)) * 2;
                 if (tmpSpeed != Speed)
@@ -200,17 +203,6 @@ void loop()
     //       \/     \/     \/      \/       \/     \/     \/        \/     \/     \/     \/      \//_____/      \/ 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // send data:  ID = 0x100, Standard CAN Frame, Data length = 8 bytes, 'data' = array of data bytes to send
-    byte sndStat = CAN0.sendMsgBuf(0x100, 0, 8, data);
-    if(sndStat == CAN_OK)
-    {
-        Serial.println("Message Sent Successfully!");
-    } 
-    else 
-    {
-        Serial.println("Error Sending Message...");
-    }
-    delay(100);                                      // send data per 100ms
-
 }
 // ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
