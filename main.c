@@ -138,32 +138,39 @@ void loop()
                 float tmpSpeed = (Valx4 + (Valx5 / 255)) * 2;
                 if (tmpSpeed != Speed)
                 {
-                  byte data[8] = {0x00, 0x01, 0x02, 0x03, Speed, 0x06, 0x07};
-                  Speed = tmpSpeed;
-                  Serial.print("Speed:");
-                  Serial.println(Speed);
-                  byte sndStat = CAN0.sendMsgBuf(0x100, 0, 8, data);
-                  if(sndStat == CAN_OK)
-                  {
-                      Serial.println("Message Send success.");
-                  } 
-                  else 
-                  {
-                      Serial.println("Error Sending Message.");
-                  }
-                  delay(100);   
+                    Speed = tmpSpeed;
+                    Serial.print("Speed:");
+                    Serial.println(Speed);
+                    byte dataSpd[8] = {0x00, 0x01, 0x02, 0x03, Speed, 0x06, 0x07};
+                    byte sndSpd = CAN0.sendMsgBuf(0x100, 0, 8, dataSpd);
+                    if(sndSpd == CAN_OK)
+                    {
+                        Serial.println("Message Send success.");
+                    } 
+                    else 
+                    {
+                        Serial.println("Error Sending Message.");
+                    }
+                    delay(100);   
                 }
                 //////////////////////////////////////////////////////////////////
                 float tmpRpm = (Valx0 + (Valx1 / 255)) * 2;
                 if (tmpRpm != Rpm)
                 {
-                  Rpm = tmpRpm;
-                  Serial.print("RPM:");
-                  Serial.println(Rpm);
-
-                  unsigned char msgRpm[8] = {Rpm, 0, 0, 0, 0, 0, 0, 0}; // need to scale and convert Rpm to match
-                  CAN.sendMsgBuf(0xABC, 0, 8, msgSpeed);
-                  Serial.println("Engine RPM Signal sent.\r\n");
+                    Rpm = tmpRpm;
+                    Serial.print("RPM:");
+                    Serial.println(Rpm);
+                    byte dataRpm[8] = {0x00, 0x01, 0x02, 0x03, Speed, 0x06, 0x07};
+                    byte sndRpm = CAN0.sendMsgBuf(0x100, 0, 8, dataRpm);
+                    if(sndRpm == CAN_OK)
+                    {
+                        Serial.println("Message Send success.");
+                    } 
+                    else 
+                    {
+                        Serial.println("Error Sending Message.");
+                    }
+                    delay(100);
                 }
             }
         }
