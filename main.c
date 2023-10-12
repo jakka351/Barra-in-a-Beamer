@@ -20,7 +20,8 @@
 // /////                                     |______  /\___  >____  /__|_|  /\___  >__|   
 // /////                                            \/     \/     \/      \/     \/       
 // /////
-// /////                                     Barra in a Beamer Arduino Code by Jakka351
+// /////          Barra in a Beamer Arduino Code by Jakka351 -  BMW 730D Cluster driven by Spanish Oak PCM (Barra motor)
+// /////                                    
 // /////     __________________________________________________________________________________________________________________
 // /////      |--------------------------------------------------------------------------------------------------------------|
 // /////      |          https://github.com/jakka351  | jakka351@outlook.com |      https://facebook.com/testePresent        |
@@ -152,7 +153,7 @@ void loop()
             float tmpSpeed = (Valx4 + (Valx5 / 255)) * 2;
             if (tmpSpeed != V_VEH)
             {
-                V_VEH = tmpSpeed;
+                V_VEH = (tmpSpeed * 0.1);    // From Barra PCM then calced to KM/H, then multiply KMH * 0.1 to correct for BMW cluster input
                 CHKSM_V_V = (V_VEH + 0x40);  // TBA
                 Serial.print("[V_VEH]Vehicle Speed km/h:");
                 Serial.println(V_VEH);
