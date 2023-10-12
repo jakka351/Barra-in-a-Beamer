@@ -36,7 +36,7 @@
 // /////        3.    Redistributions in binary form must reproduce the above copyright notice, this
 // /////              list of conditions and the following disclaimer in the documentation and/or other
 // /////              materials provided with the distribution.
-// /////        4.    Neither the name of the organization nor the names of its contributors may be used to
+// /////        4.    Neither the name of the organization nor the names of its contributors may be used t
 // /////              endorse or promote products derived from this software without specific prior written permission.
 // /////      _________________________________________________________________________________________________________________
 // /////      THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
@@ -56,6 +56,7 @@
 // ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include <SPI.h>
 #include "mcp_can.h"
+#define CAN0_INT 2                              // Set INT to pin 2
 // ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // ////                     .__      ___.   .__                 
 // //// ___  _______ _______|__|____ \_ |__ |  |   ____   ______
@@ -65,13 +66,14 @@
 // ////             \/              \/    \/          \/     \/
 // //// 
 // ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-int Speed;
-int Rpm;
+int V_VEH;                                      // Vehicle Speed 
+int CHKSM_V_V;                                  // checksum @ 0x1A0 Byte[7] 
+int Rpm;                                        // 
+int odoCount;                                   // 
 long unsigned int rxId;                         //
 unsigned char len = 0;                          //
 unsigned char rxBuf[8];                         //
 char msgString[128];                            // Array to store serial string
-#define CAN0_INT 2                              // Set INT to pin 2
 MCP_CAN CAN0(10);                               // Set CS to pin 10
 // ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // ////                __                
@@ -118,91 +120,146 @@ void loop()
     //  |__|    \___  >\___  >___  >__| \_/  \___  >  \___  >____  /___|  /___  /____//____  > |__|_|  /\___  >____  >____  >(____  /\___  / \___  >____  >
     //              \/     \/    \/              \/       \/     \/     \/    \/           \/        \/     \/     \/     \/      \//_____/      \/     \/     // 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    if(!digitalRead(CAN0_INT))                         // If CAN0_INT pin is low, read receive buffer
+    if(!digitalRead(CAN0_INT))                    // If CAN0_INT pin is low, read receive buffer
     {
         CAN0.readMsgBuf(&rxId, &len, rxBuf);      // Read data: len = data length, buf = data byte(s)
-        if((rxId & 0x80000000) == 0x80000000)     // Determine if ID is standard (11 bits) or extended (29 bits)
+        sprintf(msgString, "Standard ID: 0x%.3lX       DLC: %1d  Data:", rxId, len);           // print 11 bit ID
+        Serial.print(msgString);                       // the actual printer
+        // ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        // _______         ________________________  __________                            __                .__         _________                __                .__       _____             .___    .__          
+        // \   _  \ ___  __\_____  \   _  \______  \ \______   \______  _  __ ____________/  |_____________  |__| ____   \_   ___ \  ____   _____/  |________  ____ |  |     /     \   ____   __| _/_ __|  |   ____  
+        // /  /_\  \\  \/  //  ____/  /_\  \  /    /  |     ___/  _ \ \/ \/ // __ \_  __ \   __\_  __ \__  \ |  |/    \  /    \  \/ /  _ \ /    \   __\_  __ \/  _ \|  |    /  \ /  \ /  _ \ / __ |  |  \  | _/ __ \ 
+        // \  \_/   \>    </       \  \_/   \/    /   |    |  (  <_> )     /\  ___/|  | \/|  |  |  | \// __ \|  |   |  \ \     \___(  <_> )   |  \  |  |  | \(  <_> )  |__ /    Y    (  <_> ) /_/ |  |  /  |_\  ___/ 
+        //  \_____  /__/\_ \_______ \_____  /____/    |____|   \____/ \/\_/  \___  >__|   |__|  |__|  (____  /__|___|  /  \______  /\____/|___|  /__|  |__|   \____/|____/ \____|__  /\____/\____ |____/|____/\___  >
+        //        \/      \/       \/     \/                                     \/                        \/        \/          \/            \/                                  \/            \/               \/ 
+        //   _________                        .___   ____    __________                  __________                _____  .__        
+        //  /   _____/_____   ____   ____   __| _/  /  _ \   \______   \ _______  _______\______   \ ___________  /     \ |__| ____  
+        //  \_____  \\____ \_/ __ \_/ __ \ / __ |   >  _ </\  |       _// __ \  \/ /  ___/|     ___// __ \_  __ \/  \ /  \|  |/    \ 
+        //  /        \  |_> >  ___/\  ___// /_/ |  /  <_\ \/  |    |   \  ___/\   /\___ \ |    |   \  ___/|  | \/    Y    \  |   |  \
+        // /_______  /   __/ \___  >\___  >____ |  \_____\ \  |____|_  /\___  >\_//____  >|____|    \___  >__|  \____|__  /__|___|  /
+        //         \/|__|        \/     \/     \/         \/         \/     \/         \/               \/              \/        \/           
+        // ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        // powertrainControlModule code notesL
+        // CAN ID 0x207 Data Bytes:  [0]EngineRPM [1]EngineRPM [2]EngineSpeedRateOfChange [3]EngineSpeedRateOfChange [4]VehicleSpeed  [5]VehicleSpeed  [6]ThrottlePositionManifold  [7]ThrottlePositionRateOfChange
+        if (rxId == 0x207) 
         {
-            sprintf(msgString, "Extended ID: 0x%.8lX  DLC: %1d  Data:", (rxId & 0x1FFFFFFF), len); // print extended ID
-        }
-        else
-        {
-            sprintf(msgString, "Standard ID: 0x%.3lX       DLC: %1d  Data:", rxId, len);           // print 11 bit ID
-            // test code starts here
-            if (rxId == 0x207) // Powertrain Control Module EngineRPM 207 8 EngineRPM EngineRPM EngineSpeedRateOfChange EngineSpeedRateOfChange VehicleSpeed  VehicleSpeed  ThrottlePositionManifold  ThrottlePositionRateOfChange
+            //////////////////////////////////////////////////////////////////
+            int Valx0 = (int)rxBuf[0]; // ENGINE RPM
+            int Valx1 = (int)rxBuf[1]; // ENGINE RPM
+            int Valx4 = (int)rxBuf[4]; // VEHICLE SPEED
+            int Valx5 = (int)rxBuf[5]; // VEHICLE SPEED
+            //////////////////////////////////////////////////////////////////
+            float tmpSpeed = (Valx4 + (Valx5 / 255)) * 2;
+            if (tmpSpeed != V_VEH)
             {
-                //////////////////////////////////////////////////////////////////
-                // 
-                int Valx0 = (int)rxBuf[0]; // ENGINE RPM
-                int Valx1 = (int)rxBuf[1]; // ENGINE RPM
-                int Valx4 = (int)rxBuf[4]; // VEHICLE SPEED
-                int Valx5 = (int)rxBuf[5]; // VEHICLE SPEED
-                //////////////////////////////////////////////////////////////////
-                float tmpSpeed = (Valx4 + (Valx5 / 255)) * 2;
-                if (tmpSpeed != Speed)
+                V_VEH = tmpSpeed;
+                CHKSM_V_V = (V_VEH + 0x40);  // TBA
+                Serial.print("[V_VEH]Vehicle Speed km/h:");
+                Serial.println(V_VEH);
+                //////////////////////////////////////
+                // CAN ID 0x1A0 Byte 0 - Vehicle Speed 
+                // V_VEH    0   12  Intel   Unsigned    0.1 0   km/h 
+                byte dataSpd[8] = {V_VEH, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, CHKSM_V_V};
+                byte sndSpd = CAN0.sendMsgBuf(0x1A0, 0, 8, dataSpd);  
+                if(sndSpd == CAN_OK)
                 {
-                    Speed = tmpSpeed;
-                    Serial.print("Speed:");
-                    Serial.println(Speed);
-                    byte dataSpd[8] = {0x00, 0x01, 0x02, 0x03, Speed, 0x06, 0x07};
-                    byte sndSpd = CAN0.sendMsgBuf(0x100, 0, 8, dataSpd);
-                    if(sndSpd == CAN_OK)
-                    {
-                        Serial.println("Message Send success.");
-                    } 
-                    else 
-                    {
-                        Serial.println("Error Sending Message.");
-                    }
-                    delay(100);   
-                }
-                //////////////////////////////////////////////////////////////////
-                float tmpRpm = (Valx0 + (Valx1 / 255)) * 2;
-                if (tmpRpm != Rpm)
+                    Serial.println("[V_VEH]Message Send success.");
+                } 
+                else 
                 {
-                    Rpm = tmpRpm;
-                    Serial.print("RPM:");
-                    Serial.println(Rpm);
-                    byte dataRpm[8] = {0x00, 0x01, 0x02, 0x03, Speed, 0x06, 0x07};
-                    byte sndRpm = CAN0.sendMsgBuf(0x100, 0, 8, dataRpm);
-                    if(sndRpm == CAN_OK)
-                    {
-                        Serial.println("Message Send success.");
-                    } 
-                    else 
-                    {
-                        Serial.println("Error Sending Message.");
-                    }
-                    delay(100);
+                    Serial.println("[V_VEH]Error Sending Message.");
                 }
+                delay(100);   
+            }
+            //////////////////////////////////////////////////////////////////
+            float tmpRpm = (Valx0 + (Valx1 / 255)) * 2;
+            if (tmpRpm != Rpm)
+            {
+                Rpm = tmpRpm;
+                Serial.print("RPM:");
+                Serial.println(Rpm);
+                byte dataRpm[8] = {0x00, 0x01, 0x02, 0x03, Rpm, 0x06, 0x07};
+                byte sndRpm = CAN0.sendMsgBuf(0xABC, 0, 8, dataRpm);
+                if(sndRpm == CAN_OK)
+                {
+                    Serial.println("Message Send success.");
+                } 
+                else 
+                {
+                    Serial.println("Error Sending Message.");
+                }
+                delay(100);
             }
         }
-        Serial.print(msgString); // the actual printer
-  
+        // //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        //  _______            _____ _________________       ________       .___                     __                 _________                      __   
+        //  \   _  \ ___  ___ /  |  |\_____  \______  \      \_____  \    __| _/____   _____   _____/  |_  ___________  \_   ___ \  ____  __ __  _____/  |_ 
+        //  /  /_\  \\  \/  //   |  |_/  ____/   /    /       /   |   \  / __ |/  _ \ /     \_/ __ \   __\/ __ \_  __ \ /    \  \/ /  _ \|  |  \/    \   __\
+        //  \  \_/   \>    </    ^   /       \  /    /       /    |    \/ /_/ (  <_> )  Y Y  \  ___/|  | \  ___/|  | \/ \     \___(  <_> )  |  /   |  \  |  
+        //   \_____  /__/\_ \____   |\_______ \/____/        \_______  /\____ |\____/|__|_|  /\___  >__|  \___  >__|     \______  /\____/|____/|___|  /__|  
+        //         \/      \/    |__|        \/                      \/      \/            \/     \/          \/                \/                  \/            
+        // ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        // odometerCount code notes
+        // BARRA CAN ID: 0x427 Byte [4] Odometer Count Byte [7] Engine Speed Count
+        // Unit:km  Offset:0,Mult:0.000201167, Div:1  FF=Invalid
+        if (rxId == 0x427) 
+        {
+            int odoCount = (int)rxBuf[4];
+            float odoCountMulti = (odoCount * 0.000201167);
+            if (odoCount == 0)
+            {
+                //Vehicle Stationary
+                //pass;   
+            }
+            else if (odoCount > 0 < 0xFF)
+            {
+                //Valid Data Range
+            } 
+            else if (odoCount == 0xFF)
+            {
+                //Invalid Data
+            }
+
+        }
+        // //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        //  _______            ______________________  ____________________  _______  ________  .____            /\      /\ .___.____    .____     ____ ___  _____  .____     _______________   _______________.____     
+        //  \   _  \ ___  ___ /  |  \_____  \______  \ \______   \______   \ \      \ \______ \ |    |          / /     / / |   |    |   |    |   |    |   \/     \ |    |    \_   _____/\   \ /   /\_   _____/|    |    
+        //  /  /_\  \\  \/  //   |  |__(__  <   /    /  |     ___/|       _/ /   |   \ |    |  \|    |         / /     / /  |   |    |   |    |   |    |   /  \ /  \|    |     |    __)_  \   Y   /  |    __)_ |    |    
+        //  \  \_/   \>    </    ^   /       \ /    /   |    |    |    |   \/    |    \|    `   \    |___     / /     / /   |   |    |___|    |___|    |  /    Y    \    |___  |        \  \     /   |        \|    |___ 
+        //   \_____  /__/\_ \____   /______  //____/    |____|    |____|_  /\____|__  /_______  /_______ \   / /     / /    |___|_______ \_______ \______/\____|__  /_______ \/_______  /   \___/   /_______  /|_______ \
+        //         \/      \/    |__|      \/                            \/         \/        \/        \/   \/      \/                 \/       \/               \/        \/        \/                    \/         \/
+        // ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        // PRNDL & illumination level
+        // BARRA: CAN ID 0x437:
+        //      Byte[0] FuelLevelDamped, Byte[1] FuelLevelInstant, Byte[2] HandbrakeStatus/LowFuelIndicator/FuelSenderFault/ParkLights/MILStrategyOn, Byte[3] ClusterVoltage  
+        //      Byte[4]IlluminationLevelLow, Byte[5] IlluminationLevelHigh, Byte[6] PRNDL, Byte[7] MaxFuelLevel 
+        // BMW:
+        //      CAN ID 0x1D2 Display gearbox data:
+        //    Type: CAN Standard
+        //    ID: 0x1D2 DLC: 6 Tx method: cycle Cycle time: 200ms
+        //    Signal  Start bit   Length  Order   Value type  Factor  Offset  Unit
+        //    Message example: 0x1D2 6 E1 0C 8F 7C F0 FF
+        if (rxId == 0x437) 
+        {
+
+        }
+        ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         if((rxId & 0x40000000) == 0x40000000)          // Determine if message is a remote request frame.
         {    
-          sprintf(msgString, "REMOTE REQUEST FRAME");  // print remote request frame
-          Serial.print(msgString);
+            sprintf(msgString, "REMOTE REQUEST FRAME");  // print remote request frame
+            Serial.print(msgString);
         } 
         else 
         {
-          for(byte i = 0; i<len; i++)                  //
-          {
-            sprintf(msgString, " 0x%.2X", rxBuf[i]);   //
-            Serial.print(msgString);                   // print regular can frame
-          }
+            for(byte i = 0; i<len; i++)                  //
+            {
+                sprintf(msgString, " 0x%.2X", rxBuf[i]);   //
+                Serial.print(msgString);                   // print regular can frame
+            }
         }
         Serial.println();
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     }
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    //                            .___                                                                             
-    //    ______ ____   ____    __| _/   ____ _____    ____     _____   ____   ______ ___________     ____   ____  
-    //   /  ___// __ \ /    \  / __ |  _/ ___\\__  \  /    \   /     \_/ __ \ /  ___//  ___/\__  \   / ___\_/ __ \ 
-    //   \___ \\  ___/|   |  \/ /_/ |  \  \___ / __ \|   |  \ |  Y Y  \  ___/ \___ \ \___ \  / __ \_/ /_/  >  ___/ 
-    //  /____  >\___  >___|  /\____ |   \___  >____  /___|  / |__|_|  /\___  >____  >____  >(____  /\___  / \___  >
-    //       \/     \/     \/      \/       \/     \/     \/        \/     \/     \/     \/      \//_____/      \/ 
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    // send data:  ID = 0x100, Standard CAN Frame, Data length = 8 bytes, 'data' = array of data bytes to send
 }
 // ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
