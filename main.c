@@ -20,7 +20,7 @@
 // /////                                     |______  /\___  >____  /__|_|  /\___  >__|   
 // /////                                            \/     \/     \/      \/     \/       
 // /////
-// /////          Barra in a Beamer Arduino Code by Jakka351 -  BMW 730D Cluster driven by Spanish Oak PCM (Barra motor)
+// /////                Barra in a Beamer Arduino Code by Jakka351 -  BMW 730D Cluster driven by Spanish Oak PCM
 // /////                                    
 // /////     __________________________________________________________________________________________________________________
 // /////      |--------------------------------------------------------------------------------------------------------------|
@@ -70,6 +70,8 @@
 int V_VEH;                                      // Vehicle Speed 
 int CHKSM_V_V;                                  // checksum @ 0x1A0 Byte[7] 
 int Rpm;                                        // 
+int RPM_TEMP_DOM_1;                             // Rpm1 input 
+int RPM_TEMP_DOM_2;                             // Rpm2 input
 int odoCount;                                   // 
 long unsigned int rxId;                         //
 unsigned char len = 0;                          //
@@ -177,10 +179,27 @@ void loop()
             if (tmpRpm != Rpm)
             {
                 Rpm = tmpRpm;
+                RPM_TEMP_DOM_1 = Rpm;
+                RPM_TEMP_DOM_2 = Rpm;
                 Serial.print("RPM:");
                 Serial.println(Rpm);
-                byte dataRpm[8] = {0x00, 0x01, 0x02, 0x03, Rpm, 0x06, 0x07};
-                byte sndRpm = CAN0.sendMsgBuf(0xABC, 0, 8, dataRpm);
+                //CAN ID 0x332 Display RPM range:
+                //Type: CAN Standard
+                // ID: 0x332
+                // DLC: 2
+                // Tx method: cycle
+                // Cycle time: 5000ms
+                // Signal  Start bit   Length  Order   Value type  Factor  Offset  Unit
+                // RPM_TEMP_DOM_1  0   8   Intel   Unsigned    50  0   1/min
+                // RPM_TEMP_DOM_2  8   8   Intel   Unsigned    50  0   1/min
+                // RPM_TEMP_DOM_1, variable engine speed warning field, actual value
+                // RPM_TEMP_DOM_2, engine max RPM
+                // Message example:
+                // 0x332 2 5A 82
+                // RPM_TEMP_DOM_1: 0x5A -> 4500 1/min
+                // RPM_TEMP_DOM_2: 0x82 -> 6500 1/min
+                byte dataRpm[2] = {RPM_TEMP_DOM_1, RPM_TEMP_DOM_2};
+                byte sndRpm = CAN0.sendMsgBuf(0x332, 0, 2, dataRpm);
                 if(sndRpm == CAN_OK)
                 {
                     Serial.println("Message Send success.");
@@ -244,6 +263,33 @@ void loop()
         {
 
         }
+
+        // //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        //    .___ .__                                      __  .__               
+        //   __| _/|__|____     ____   ____   ____  _______/  |_|__| ____   ______
+        //  / __ | |  \__  \   / ___\ /    \ /  _ \/  ___/\   __\  |/ ___\ /  ___/
+        // / /_/ | |  |/ __ \_/ /_/  >   |  (  <_> )___ \  |  | |  \  \___ \___ \ 
+        // \____ | |__(____  /\___  /|___|  /\____/____  > |__| |__|\___  >____  >
+        //      \/         \//_____/      \/           \/               \/     \/ 
+        // //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        //
+        //
+        //
+        //
+        //
+        if (rxId == 0x7DF)            // OBDII Tester Transmit ID 
+        {
+
+        }
+        if (rxId == 0x7E0)            // PCM_DiagSig_Rx (From tester)
+        {
+
+        }
+        if (rxId == 0x7E8)            // PCM_DiagSig_Tx (From ECU)
+        {
+
+        }
+
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         if((rxId & 0x40000000) == 0x40000000)          // Determine if message is a remote request frame.
         {    
