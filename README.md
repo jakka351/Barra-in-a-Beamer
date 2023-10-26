@@ -19,16 +19,16 @@ Code for the project Barra in a Beamer. Installing a Ford Falcon Barra engine in
 - Set Vehicle Speed Source to be `ABS via CAN` in Barra PCM
 - Emulate CAN Message for Vehicle Speed Source input on CAN ID 0x4B0 (Emulating the Falcon ABS Module using the BMW ABS Data)
 - What is needed to get BMW factory ABS functional?
-- Emulate missing DME CAN messages for ABS and TCM due to removal of DME module
-- Disable Passive Anti-theft System in Barra PCM
-- Fit a second OBD port for Barra PCM diagnostics
+- Emulate missing DME CAN messages due to removal of DME module
+- Disable Passive Anti-theft System in Barra PCM 
+- Fit a second OBD port for Barra PCM diagnostics (4 GND, 5 GND, 16 12V, 6 CAN H, 14 CAN L)
 - Install interface board into vehicle
-- Throttle / Accelerator pedal input into PCM
-- HVAC and compressor control needs to be thought out
-- Brake Status input into PCM
-- Cruise control neede to be thought out
-- BMW shifter to run Ford 6HP26
-- Engine Start/Stop Buttom
+- Throttle / Accelerator pedal input into PCM > Auto Electrician
+- HVAC and compressor control needs to be thought out > Auto Electrician
+- Brake Status input into PCM 
+- Cruise control neede to be thought out > Auto Electrician
+- BMW shifter to run Ford 6HP26 > Auto Electrician 
+- Engine Start/Stop Button > Auto Electrician 
   
 ## Software Used  
 
