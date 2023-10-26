@@ -237,7 +237,6 @@ void loop()
         // \  \_/   \>    </       \  /       \  \_/   \   |    |   |  | \// __ \|   |  \\___ \/    |    \  \___|  | |  |  // __ \|  |_\    \_\  \  ___/ / __ \|  | \/
         //  \_____  /__/\_ \_______ \/______  /\_____  /   |____|   |__|  (____  /___|  /____  >____|__  /\___  >__| |____/(____  /____/\______  /\___  >____  /__|   
         //        \/      \/       \/       \/       \/                        \/     \/     \/        \/     \/                \/             \/     \/     \/               
-        ////////////////////////////////////////////////
         // Powertrain Control Module    Transmission Mode   230 8   Transmission Gear Pos   TargetGearPosition  ActualGearPosition  TorqueConverter             Trans Mode Fault Warn
         // Code for displaying current transmission gear on the cluster (PRNDL)
         if (canId == 0x230)
@@ -257,7 +256,6 @@ void loop()
         //  \  \_/   \>    </    ^   /       \  /    /       /    |    \/ /_/ (  <_> )  Y Y  \  ___/|  | \  ___/|  | \/ \     \___(  <_> )  |  /   |  \  |  
         //   \_____  /__/\_ \____   |\_______ \/____/        \_______  /\____ |\____/|__|_|  /\___  >__|  \___  >__|     \______  /\____/|____/|___|  /__|  
         //         \/      \/    |__|        \/                      \/      \/            \/     \/          \/                \/                  \/            
-        // ////////////////////////////////////////////
         // odometerCount code notes
         // BARRA CAN ID: 0x427 Byte [4] Odometer Count Byte [7] Engine Speed Count
         // Unit:km  Offset:0,Mult:0.000201167, Div:1  FF=Invalid
