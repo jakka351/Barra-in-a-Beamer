@@ -1,4 +1,4 @@
-![image](https://user-images.githubusercontent.com/57064943/163714778-8598c24a-6ae2-49f6-ba4c-42de94dfa025.png)
+
 
 <img align="right" src="https://www.pngmart.com/files/4/Ford-Logo-PNG-Transparent-Image.png" height="15%" width="15%"/><img align="right" src="https://pngimg.com/uploads/bmw/bmw_PNG99555.png" height="10%" width="10%"/>
 
