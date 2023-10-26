@@ -32,8 +32,11 @@ Code for the project Barra in a Beamer. Installing a Ford Falcon Barra engine in
 - `Putty`
 
 
-## Hardware
+## Hardware Required
+- Raspberry Pi 4 with PiCAN3 hat
 - Longan Labs CANbed development board
+- OBD power isolator & various adaptors
+- Multimeter
 
 ## Decoded CAN Messages
 - tba
