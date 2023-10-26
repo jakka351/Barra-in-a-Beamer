@@ -301,6 +301,12 @@ void loop()
             // ECT received from Barra PCM and then transmitted to Kombi for display on cluster
             bool engineCoolantOverTemperatureWarning = false;
             int engineCoolantTemperature = (int)buf[0];
+            if (engineCoolantTemperature > 0xFF) // need to scale this number to reflect an overtemp condition
+            {
+                Serial.println("Warning: Engine Coolant Temperature High.");
+                engineCoolantOverTemperatureWarning = true;
+                delay(100);
+            }
             unsigned char sendEngineCoolantTemperature[8] = {engineCoolantTemperature, 0, 0, 0, 0, 0, 0, 0}; //
             CAN.sendMsgBuf(0xABC, 0, 2, sendEngineCoolantTemperature);
             Serial.println("Engine Coolant Temperature Tx data.");
@@ -333,13 +339,31 @@ void loop()
         // \  \_/   \>    </    ^   /    |   \  \_/   \ /    |    \    |   \/        \  \        /|   Y  \  ___/\  ___/|  |__  /        \  |_> >  ___/\  ___// /_/ |   |  | (  <_> )  | \/  |    |   \     \____/    Y    \
         //  \_____  /__/\_ \____   ||______  /\_____  / \____|__  /______  /_______  /   \__/\  / |___|  /\___  >\___  >____/ /_______  /   __/ \___  >\___  >____ |   |__|  \____/|__|     |____|    \______  /\____|__  /
         //        \/      \/    |__|       \/       \/          \/       \/        \/         \/       \/     \/     \/               \/|__|        \/     \/     \/                                         \/         \/ // 
+        // FALCON WHEEL SPEED SIGNAL:
         // Antilock Brake Module   Wheel Speed Sensor  4B0 8   
         // WheelSpeedFrontLeft Units:km/h   Offset:0;Multi:1;Div:100   0xFFFE=Initialization in progress   0xFFFF=Wheel Speed Faulted          
         // WheelSpeedFrontLeft Units:km/h  Offset:0;Multi:1;Div:100  0xFFFE=Initialization in progress  0xFFFF=Wheel Speed Faulted         
         // FrontRightWheelSpeed  Units:km/h  Offset:0;Multi:1;Div:100  0xFFFE=Initialization in progress  0xFFFF=Wheel Speed Faulted   
         // FrontRightWheelSpeed    RearLeftWheelSpeed  RearLeftWheelSpeed  RightRearWheelSpeed RightRearWheelSpeed
+        // BMW WHEEL SPEED SIGNAL:
+        // CAN ID 0xCE Wheel rotating speed:
+        // ID: 0x0CE
+        // DLC: 8
+        // Tx method: cycle
+        // Cycle time: 20ms
+        // Signal  Start bit   Length  Order   Value type  Factor  Offset  Unit
+        // V_WHL_FLH   0   16  Intel   Signed  0.0625  0   km/h
+        // V_WHL_FRH   16  16  Intel   Signed  0.0625  0   km/h
+        // V_WHL_RLH   32  16  Intel   Signed  0.0625  0   km/h
+        // V_WHL_RRH   48  16  Intel   Signed  0.0625  0   km/h
+        // Message example:        // 
+        // 0xCE 8 00 00 00 00 00 00 00 00
+        // V_WHL_FLH: 0km/h
+        // V_WHL_FRH: 0km/h
+        // V_WHL_RLH: 0km/h
+        // V_WHL_RRH: 0km/h
         // Recieve ABS individual wheel speed signals from BMW ABS module, and re-transmit on ID 0x4B0 for Barra PCM, assuming that Vehicle Speed Source is set to 'ABS via CAN' with PCMTEC
-        if (canId == 0xABC) // BMW WHEEL SPEED ID FROM ABS
+        if (canId == 0x0CE) // BMW WHEEL SPEED ID FROM ABS
         {
             int wheelSpeedFrontLeft1  = (int)buf[0];
             int wheelSpeedFrontLeft2  = (int)buf[1];
