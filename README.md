@@ -18,6 +18,8 @@ Code for the project Barra in a Beamer. Installing a Ford Falcon Barra engine in
 - Set Vehicle Speed Source to be `ABS via CAN`
 - Create CAN Message for Vehicle Speed Source input on CAN ID 0x4B0 (Emulating the Falcon ABS Module using the BMW ABS Data)
 - Disable Passive Anti-theft System in Barra PCM
+- Fit a second OBD port for Barra PCM diagnostics
+- Install interface board into vehicle 
   
 ## Software Used  
 
