@@ -29,8 +29,16 @@ Code for the project Barra in a Beamer. Installing a Ford Falcon Barra engine in
 - `FORscan`
 - `Arduino IDE`  
 - `Sublime Text`  
-- `Putty`  
+- `Putty`
 
+
+## Hardware
+- Longan Labs CANbed development board
+
+## Decoded CAN Messages
+- tba
+
+  
 ## Relevant Information
 [`FG Falcon Git Repo`](https://github.com/jakka351/FG-Falcon)   
 [`Notes on Stand Alone PCM Setup`](https://forum.pcmtec.com/topic/32-howto-run-pcm-standalone-eg-engine-swap-pats-disable-and-speed-source-setup/)    
