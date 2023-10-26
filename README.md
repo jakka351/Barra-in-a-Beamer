@@ -21,7 +21,10 @@ Code for the project Barra in a Beamer. Installing a Ford Falcon Barra engine in
 - Emulate missing DME CAN messages for ABS and TCM due to removal of DME module
 - Disable Passive Anti-theft System in Barra PCM
 - Fit a second OBD port for Barra PCM diagnostics
-- Install interface board into vehicle 
+- Install interface board into vehicle
+- Throttle / Accelerator pedal input into PCM
+- HVAC and compressor control needs to be thought out
+- Brake Status input into PCM
   
 ## Software Used  
 
