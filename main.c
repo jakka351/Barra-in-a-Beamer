@@ -416,10 +416,11 @@ void loop()
         // V_WHL_FRH: 0km/h
         // V_WHL_RLH: 0km/h
         // V_WHL_RRH: 0km/h
-        // Recieve ABS individual wheel speed signals from BMW ABS module, and re-transmit on ID 0x4B0 for Barra PCM, assuming that Vehicle Speed Source is set to 'ABS via CAN' with PCMTEC
+        // ASSUMING THAT VEHICLE SPEED SOURCE IS SET TO 'ABS via CAN' with PCMTEC, WE NEED TO PROVIDE THAT SIGNAL FOR THE BARRA PCM VIA THE CANBUS
+        // Recieve ABS individual wheel speed signals from BMW ABS module, and re-transmit on ID 0x4B0 for Barra PCM
         if (canId == 0x0CE) // BMW WHEEL SPEED ID FROM ABS
         {
-            int wheelSpeedFrontLeft1  = (int)buf[0];
+            int wheelSpeedFrontLeft1  = (int)buf[0]; // BMW DATA is * 0.0625
             int wheelSpeedFrontLeft2  = (int)buf[1];
             int wheelSpeedFrontRight1 = (int)buf[2];
             int wheelSpeedFrontRight2 = (int)buf[3];
@@ -430,6 +431,14 @@ void loop()
             unsigned char wheelSpeedSignalData[8] = {wheelSpeedFrontLeft1, wheelSpeedFrontLeft2, wheelSpeedFrontRight1, wheelSpeedRearRight2, wheelSpeedRearLeft1, wheelSpeedRearLeft2, wheelSpeedRearRight1, wheelSpeedRearRight2}; //
             CAN.sendMsgBuf(0x4B0, 0, 8, wheelSpeedSignalData);
             Serial.println("ABS Wheel Speed Signal Data Tx on ID 0x4B0 for PCM.");
+            if ( wheelSpeedFrontLeft2 | wheelSpeedRearRight2 | wheelSpeedRearLeft2 | wheelSpeedRearRight2 == 0xFE)
+            {
+                Serial.println("ABS Wheel Speed Signal INITIALIZATION IN PROGRESS.");                
+            } 
+            else if (wheelSpeedFrontLeft1 | wheelSpeedFrontLeft2 | wheelSpeedFrontRight1 | wheelSpeedRearRight2 | wheelSpeedRearLeft1 | wheelSpeedRearLeft2 | wheelSpeedRearRight1 | wheelSpeedRearRight2 == 0xFF)
+            {
+                Serial.println("ABS Wheel Speed Signal ERROR INVALID DATA.");
+            }
             delay(100);   
         }
         // Notes on Standalone PCM, disabling PATS for BA/BF via PCMTEC:
