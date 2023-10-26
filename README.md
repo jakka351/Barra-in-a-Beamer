@@ -21,9 +21,9 @@ Code for the project Barra in a Beamer. Installing a Ford Falcon Barra engine in
   
 ## Software Used  
 
-<IMG src="https://camo.githubusercontent.com/c3087133bc5593228778aacb47dd9c5ceccc927fef16a70adc01b5c44717ef0a/68747470733a2f2f666f727363616e2e6f72672f696d616765732f464f525363616e4c69746541707049636f6e526f756e64436f726e6572733134342e706e67" align="right" width="5%" height="5%" />   
-<img align="right" src="https://user-images.githubusercontent.com/57064943/160247672-f3568ee7-4d7b-428d-b914-4894a178538a.png" height="10%" width="10%" />     
-<img align="right" src="https://cdn.freebiesupply.com/logos/large/2x/arduino-logo-png-transparent.png" height="5%" width="5%" />     
+<IMG src="https://camo.githubusercontent.com/c3087133bc5593228778aacb47dd9c5ceccc927fef16a70adc01b5c44717ef0a/68747470733a2f2f666f727363616e2e6f72672f696d616765732f464f525363616e4c69746541707049636f6e526f756e64436f726e6572733134342e706e67" align="right" width="4%" height="4%" />   
+<img align="right" src="https://user-images.githubusercontent.com/57064943/160247672-f3568ee7-4d7b-428d-b914-4894a178538a.png" height="12%" width="12%" />     
+<img align="right" src="https://cdn.freebiesupply.com/logos/large/2x/arduino-logo-png-transparent.png" height="8%" width="8%" />     
  
 - `PCMTEC`
 - `FORscan`
