@@ -91,8 +91,22 @@ int wheelSpeedRearRight1;
 int wheelSpeedRearRight2;
 int odoCount;                                   // 
 float odoCountMulti;
+bool flagEngineOilPressureWarning;
+bool flagEngineOilPressureWarningFlashing;
+bool flagCruiseControlSet;
+bool flagAlternatorFailureState;
+bool flagEngineOverHeatWarning;
+bool flagDiffLockWarning;
+bool flagIdleMode;
+bool flagAirConCompressor;
+bool flagElectronicThrottleControlWarning;
+bool flagElectronicThrottleControlWarningFlashing;
+bool flagImmobilizerLamp;
+bool flagImmobilizerLampFlashing;
+bool flagAirConShedLoad;
+bool flagDtcLoggingHighSpeedCan;
 bool flagMilLampIlluminated;
-bool engineCoolantOverTemperatureWarning;
+bool flagEngineCoolantOverTemperatureWarning;
 // ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // ////                __                
 // ////   ______ _____/  |_ __ ________  
@@ -324,12 +338,10 @@ void loop()
                 case 0x00:
                     //Vehicle Stationary
                     Serial.println("Vehicle is Stationary, Odometer count 0.");
-                    delay(100);
                     break;
                 case 0xFF:
                     //Invalid Data
                     Serial.println("Invalid Odometer Count Data.");
-                    delay(100);
                     break;
             }
             if (odoCount > 0 < 0xFF)
@@ -337,11 +349,9 @@ void loop()
                 // Valid Data
                 Serial.println("Odometer Count: ");
                 Serial.println(odoCountMulti);
-                delay(100);
             } 
             // //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       
-           
             // ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
             //    ___________              .__                _________               .__                 __    ___________                                        __                        
             //    \_   _____/ ____    ____ |__| ____   ____   \_   ___ \  ____   ____ |  | _____    _____/  |_  \__    ___/___   _____ ______   ________________ _/  |_ __ _________   ____  
@@ -352,18 +362,16 @@ void loop()
             //
             // ID 0x427 byte 0 Engine Coolant Temperature
             // ECT received from Barra PCM and then transmitted to Kombi for display on cluster
-            bool engineCoolantOverTemperatureWarning = false;
+            flagEngineCoolantOverTemperatureWarning = false;
             int engineCoolantTemperature = (int)buf[0];
             if (engineCoolantTemperature > 0xFF) // need to scale this number to reflect an overtemp condition
             {
                 Serial.println("Warning: Engine Coolant Temperature High.");
-                engineCoolantOverTemperatureWarning = true;
-                delay(100);
+                flagEngineCoolantOverTemperatureWarning = true;
             }
             unsigned char sendEngineCoolantTemperature[8] = {engineCoolantTemperature, 0, 0, 0, 0, 0, 0, 0}; //
             CAN.sendMsgBuf(0xABC, 0, 8, sendEngineCoolantTemperature);
             Serial.println("Engine Coolant Temperature Tx data.");
-            delay(100);
             // ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
    
             // ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -373,18 +381,74 @@ void loop()
             //   /    Y    \/ __ \|  |_|  | |  |  /   |  \  \___|  | |  (  <_> )   |  \   |   |  \/ /_/ | |  \  \___ / __ \|  | (  <_> )  | \/    |___|  / /_/  >   Y  \  |  
             //   \____|__  (____  /____/__| |____/|___|  /\___  >__| |__|\____/|___|  /___|___|  /\____ | |__|\___  >____  /__|  \____/|__|  |_______ \__\___  /|___|  /__|  
             //           \/     \/                     \/     \/                    \/         \/      \/         \/     \/                          \/ /_____/      \/      
-            // 0x427 byte 5 MIL Lamp 
-            // Check engine light on flag
-            bool flagMilLampIlluminated = false;
-            if ((int)buf[5] > 0x00)            
+            // 0x427 bytes 5 & 6  MIL Lamps - set flags as these messages will appear as switches, on and off, not a constant stream of the same data.
+            // Byte 5                          
+            // Bit 1 40 Oil Light on IC (if not out by 4 secs will beep and flash) 1 0x8 | 0xC | 0xE | 0xF
+            // Bit 2 41 Cruise Set on IC 1 0x4 | 0x6 | 0x7 | 0xF
+            // Bit 3 42 ALT_FAILURE_STAT 0=Off;1=On 1 0x2 | 0x3 | 0x7 | 0xF
+            // Bit 4 43 OilPressureWarning 0=Off;1=On 1 0x1 | 0x3 | 0x7 | 0xF
+            // Bit 5 44 EngineOverheat 0=Normal;1=OverheatWarning 0x8
+            // Bit 6 45 DiffLockWarning 0=Off;1=Engaged
+            // Bit 7 46 IdleMode 0=No;1=Yes
+            // Bit 8 47 AC_Compressor 0=Off;1=On
+            // Byte 6  
+            // Bit 1 48 ETC_Warning  0=telltale_off  1=telltale_on  2=telltale_flash 0x00 | 0x01 | 0x02
+            // Bit 2 49 ETC_Warning  0=telltale_off  1=telltale_on  2=telltale_flash 0x00 | 0x01 | 0x02
+            // Bit 3 50 ImmobLamp  0=off  1=on  2=flash
+            // Bit 4 51 ImmobLamp  0=off  1=on  2=flash
+            // Bit 5 52 MIL_Lamp  0=off  1=on  2=flash 0010 0011 0x2 | 0x3
+            // Bit 6 53 MIL_Lamp  0=off  1=on  2=flash     
+            // Bit 7 54 AC_ShedLoad 0=NotDeployed;1=Deployed
+            // Bit 8 55 DTC_Logging_HS 0=DoNotLog;1=LogDTCs 0000 0001
+            if ((int)buf[5] | buf[6] == 0x00)
+            {
+                flagEngineOilPressureWarning = false;
+                flagEngineOilPressureWarningFlashing = false;
+                flagCruiseControlSet = false;
+                flagAlternatorFailureState = false;
+                flagEngineOverHeatWarning = false;
+                flagDiffLockWarning = false;
+                flagIdleMode = false;
+                flagAirConCompressor = false;
+                flagElectronicThrottleControlWarning = false;
+                flagElectronicThrottleControlWarningFlashing = false;
+                flagImmobilizerLamp = false;
+                flagImmobilizerLampFlashing = false;
+                flagAirConShedLoad = false;
+                flagDtcLoggingHighSpeedCan  = false;
+                flagMilLampIlluminated = false;
+            } 
+            else if ((int)buf[5] == 0x10)            
+            {
+                flagEngineOilPressureWarning = true;
+                unsigned char engineOilPressureWarning[8] = {0, 0, 0, 0, 0, 0, 0, 0}; // MIL LAMP MESSAGE FOR KOMBI 
+                CAN.sendMsgBuf(0xABC, 0, 8, engineOilPressureWarning);
+                Serial.println("[Barra PCM] Engine Oil Pressure Warning.");   
+            }
+            else if ((int)buf[5] == 0x20)            
+            {
+                flagAlternatorFailureState = true;
+                unsigned char alternatorFailureState[8] = {0, 0, 0, 0, 0, 0, 0, 0}; // MIL LAMP MESSAGE FOR KOMBI 
+                CAN.sendMsgBuf(0xABC, 0, 8, alternatorFailureState);
+                Serial.println("[Barra PCM] Alternator Failure State.");   
+            }
+            else if ((int)buf[5] == 0x08)            
+            {
+                flagEngineOverHeatWarning = true;
+                unsigned char engineOverHeatWarning[8] = {0, 0, 0, 0, 0, 0, 0, 0}; // MIL LAMP MESSAGE FOR KOMBI 
+                CAN.sendMsgBuf(0xABC, 0, 8, engineOverHeatWarning);
+                Serial.println("[Barra PCM] Engine Over Heat Warning.");   
+            }
+            else if ((int)buf[6] == 0x02 | 0x03)            
             {
                 // send can message to illuminate Kombi check engine light here
                 flagMilLampIlluminated = true;
                 unsigned char milLampIlluminated[8] = {0, 0, 0, 0, 0, 0, 0, 0}; // MIL LAMP MESSAGE FOR KOMBI 
                 CAN.sendMsgBuf(0xABC, 0, 8, milLampIlluminated);
-                Serial.println("Barra PCM MIL Lamp Illuminated.");
-                delay(100);   
+                Serial.println("[Barra PCM] MIL Lamp Illuminated.");   
             }
+            delay(100); // one delay of 100 MS per CAN ID, not individual byte functions....too slow otherwise..lags
+            
             // ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         }
         // ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
