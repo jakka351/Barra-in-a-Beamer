@@ -7,7 +7,7 @@
 Code for the project Barra in a Beamer. Installing a Ford Falcon Barra engine into a 2009 BMW F01 7 Series 730D. 
 <br/></sup>
 
-<img align="left" src="https://raw.githubusercontent.com/jakka351/Barra-in-a-Beamer/main/docs/received_168803406282992.jpeg" height="50%" width="50%"/>
+<img align="left" src="https://raw.githubusercontent.com/jakka351/Barra-in-a-Beamer/main/docs/received_168803406282992.jpeg" height="25%" width="25%"/>
 
 ![image](https://user-images.githubusercontent.com/57064943/163714778-8598c24a-6ae2-49f6-ba4c-42de94dfa025.png)
 
