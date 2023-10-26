@@ -27,6 +27,8 @@ Code for the project Barra in a Beamer. Installing a Ford Falcon Barra engine in
 - HVAC and compressor control needs to be thought out
 - Brake Status input into PCM
 - Cruise control neede to be thought out
+- BMW shifter to run Ford 6HP26
+- Engine Start/Stop Buttom
   
 ## Software Used  
 
