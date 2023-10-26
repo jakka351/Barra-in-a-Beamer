@@ -29,9 +29,9 @@ Code for the project Barra in a Beamer. Installing a Ford Falcon Barra engine in
 - Cruise control neede to be thought out > Auto Electrician
 - BMW shifter to run Ford 6HP26 > Auto Electrician 
 - Engine Start/Stop Button > Auto Electrician
-- PCM Tuning? Launch Control, Rolling Anti-Lag, Boost by Gear, Torque Requestors, ETC Traction Control, 
+- PCM Tuning? Launch Control, Rolling Anti-Lag, Boost by Gear, Torque Requestors, ETC Traction Control, Other tidbits
   
-## Software Used  
+## Software Required  
 
 <IMG src="https://camo.githubusercontent.com/c3087133bc5593228778aacb47dd9c5ceccc927fef16a70adc01b5c44717ef0a/68747470733a2f2f666f727363616e2e6f72672f696d616765732f464f525363616e4c69746541707049636f6e526f756e64436f726e6572733134342e706e67" align="right" width="4%" height="4%" />   
 <img align="right" src="https://user-images.githubusercontent.com/57064943/160247672-f3568ee7-4d7b-428d-b914-4894a178538a.png" height="15%" width="15%" />     
