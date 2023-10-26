@@ -25,6 +25,7 @@ Code for the project Barra in a Beamer. Installing a Ford Falcon Barra engine in
 - Throttle / Accelerator pedal input into PCM
 - HVAC and compressor control needs to be thought out
 - Brake Status input into PCM
+- Cruise control neede to be thought out
   
 ## Software Used  
 
