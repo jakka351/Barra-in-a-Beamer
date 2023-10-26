@@ -1,6 +1,6 @@
 
 
-<img align="right" src="https://www.pngmart.com/files/4/Ford-Logo-PNG-Transparent-Image.png" height="25%" width="25%"/><img align="right" src="https://pngimg.com/uploads/bmw/bmw_PNG99555.png" height="20%" width="20%"/>
+<img align="right" src="https://user-images.githubusercontent.com/57064943/166143780-9685fc0f-eeac-4459-9320-abc607407b39.png" height="25%" width="25%"/><img align="right" src="https://pngimg.com/uploads/bmw/bmw_PNG99555.png" height="20%" width="20%"/>
 
 # Barra in a Beamer   [![image](https://img.shields.io/badge/%23-Arduino-lightgrey)](https://arduino.cc/)
 <sup>
