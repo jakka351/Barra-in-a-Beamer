@@ -239,12 +239,66 @@ void loop()
         //        \/      \/       \/       \/       \/                        \/     \/     \/        \/     \/                \/             \/     \/     \/               
         // Powertrain Control Module    Transmission Mode   230 8   Transmission Gear Pos   TargetGearPosition  ActualGearPosition  TorqueConverter             Trans Mode Fault Warn
         // Code for displaying current transmission gear on the cluster (PRNDL)
+        // CAN ID 0x230, Byte 0 is Transmission Gear Position
+        // Data: 0=Blank  1=Forward+Drive_1  2=Fordwar_Drive_2  3=Forward_Drive_3  4=Forward_Drive_4  5=Forward_Drive_5  6=Fprward_Drive_D  10=Reverse_Drive_R  11=reserved  16=Forward_Drive_6  
+        // 17=Forward_Drive_7  18=Forward_Drive_8  19=Forward_Drive_9  F0=Park_P  F1=Neutral_N  FF=Inval
         if (canId == 0x230)
         {
-            int actualGearPosition = (int)buf[3];
+            int actualGearPosition = (int)buf[0];
+            switch (actualGearPosition)
+            {
+                case 0x00:
+                    Serial.println("Trans Gear: None");
+                    break;
+                case 0x01:
+                    Serial.println("Trans Gear: 1");
+                    break;
+                case 0x02:
+                    Serial.println("Trans Gear: 2");
+                    break;
+                case 0x3:
+                    Serial.println("Trans Gear: 3");
+                    break;
+                case 0x4:
+                    Serial.println("Trans Gear: 4");
+                    break;
+                case 0x5:
+                    Serial.println("Trans Gear: 5");
+                    break;
+                case 0x6:
+                    Serial.println("Trans Gear: Drive");
+                    break;
+                case 0x10:
+                    Serial.println("Trans Gear: Reverse");
+                    break;
+                case 0x11:
+                    Serial.println("Trans Gear: Reserved");
+                    break;
+                case 0x16:
+                    Serial.println("Trans Gear: 6");
+                    break;
+                case 0x17:
+                    Serial.println("Trans Gear: 7");
+                    break;
+               case 0x18:
+                    Serial.println("Trans Gear: 8");
+                    break;
+               case 0x19:
+                    Serial.println("Trans Gear: 9");
+                    break;
+               case 0xF0:
+                    Serial.println("Trans Gear: Park");
+                    break;
+               case 0xF1:
+                    Serial.println("Trans Gear: Neutral");
+                    break;
+               case 0xFF:
+                    Serial.println("Trans Gear: Invalid Data");
+                    break;
+            }
             unsigned char sendActualGearPosition[8] = {actualGearPosition, 0, 0, 0, 0, 0, 0, 0}; //
-            CAN.sendMsgBuf(0xABC, 0, 2, sendActualGearPosition);
-            Serial.println("Transmission Gear data Tx.");
+            CAN.sendMsgBuf(0xABC, 0, 8, sendActualGearPosition);
+            Serial.println("Trans Gear Position data Tx.");
             delay(100);
         }
         // //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -306,7 +360,7 @@ void loop()
                 delay(100);
             }
             unsigned char sendEngineCoolantTemperature[8] = {engineCoolantTemperature, 0, 0, 0, 0, 0, 0, 0}; //
-            CAN.sendMsgBuf(0xABC, 0, 2, sendEngineCoolantTemperature);
+            CAN.sendMsgBuf(0xABC, 0, 8, sendEngineCoolantTemperature);
             Serial.println("Engine Coolant Temperature Tx data.");
             delay(100);
             // ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -324,8 +378,10 @@ void loop()
             if ((int)buf[5] > 0x00)            
             {
                 // send can message to illuminate Kombi check engine light here
-                Serial.println("Barra PCM MIL Lamp Illuminated.");
                 flagMilLampIlluminated = true;
+                unsigned char milLampIlluminated[8] = {0, 0, 0, 0, 0, 0, 0, 0}; // MIL LAMP MESSAGE FOR KOMBI 
+                CAN.sendMsgBuf(0xABC, 0, 8, milLampIlluminated);
+                Serial.println("Barra PCM MIL Lamp Illuminated.");
                 delay(100);   
             }
             // ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
