@@ -48,6 +48,7 @@ Code for the project Barra in a Beamer. Installing a Ford Falcon Barra engine in
 - Longan Labs CANbed development board
 - OBD power isolator & various adaptors
 - Multimeter
+- J2534 Tool
 
 ## Decoded CAN Messages
 - tba
