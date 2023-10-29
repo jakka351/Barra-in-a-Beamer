@@ -18,7 +18,7 @@ Code for the project Barra in a Beamer. Installing a Ford Falcon Barra engine in
 - Decode Barra CAN Messages & Convert for BMW Cluster
 - Decode BMW DME CAN Messages that need to be emulated
 - Malfunction Indicator Lamps from Barra PCM > BMW cluster
-- Set Vehicle Speed Source to be `ABS via CAN` in Barra PCM
+- Set Vehicle Speed Source to be `ABS via CAN` in Barra PCM - 6HP26 TCM can provide speed source to PCM.
 - Emulate CAN Message for Vehicle Speed Source input on CAN ID 0x4B0 (Emulating the Falcon ABS Module using the BMW ABS Data)
 - What is needed to get BMW factory ABS functional?
 - Emulate missing DME CAN messages due to removal of DME module
