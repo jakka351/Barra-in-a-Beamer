@@ -55,7 +55,12 @@ Code for the project Barra in a Beamer. Installing a Ford Falcon Barra engine in
 - J2534 Tool
 
 ## Decoded CAN Messages
-- tba
+
+![image](https://github.com/jakka351/Barra-in-a-Beamer/assets/57064943/d7969ea6-c7de-4d09-abc5-f84470116992)
+
+![image](https://github.com/jakka351/Barra-in-a-Beamer/assets/57064943/31ac2721-cd4f-4815-97c4-ac0c5073bd92)
+
+
 
   
 ## Relevant Information
