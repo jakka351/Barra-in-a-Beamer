@@ -1,4 +1,4 @@
-
+  
 
 <img align="right" src="https://user-images.githubusercontent.com/57064943/166143780-9685fc0f-eeac-4459-9320-abc607407b39.png" height="17%" width="17%"/><img align="right" src="https://pngimg.com/uploads/bmw/bmw_PNG99555.png" height="20%" width="20%"/>
 
@@ -62,6 +62,9 @@ Code for the project Barra in a Beamer. Installing a Ford Falcon Barra engine in
 - Multimeter
 - J2534 Tool
 
+<br/>
+<img src="https://user-images.githubusercontent.com/57064943/166506037-a9bc622c-e47f-4263-9ea4-74e6f24acc99.png" align="right"  height="20%" width="20%"/>
+
 ## CAN data from the BMW PT-CAN
 Pulling Data from the car with a Raspberry Pi + SPI-MCP2515, wired up to PT-CAN_1 at Kombi connector, powered via OBD port
 ![image](https://github.com/jakka351/Barra-in-a-Beamer/assets/57064943/d7969ea6-c7de-4d09-abc5-f84470116992)
@@ -92,5 +95,5 @@ Relevant BMW and Ford documents are in the Docs folder.
 
 
 ***
-<img src="https://user-images.githubusercontent.com/57064943/166506037-a9bc622c-e47f-4263-9ea4-74e6f24acc99.png" align="center"  height="20%" width="20%"/>
+
 
