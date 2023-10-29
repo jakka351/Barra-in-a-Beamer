@@ -41,10 +41,18 @@ Code for the project Barra in a Beamer. Installing a Ford Falcon Barra engine in
 <img align="right" src="https://cdn.freebiesupply.com/logos/large/2x/arduino-logo-png-transparent.png" height="6%" width="6%" />     
  
 - `PCMTEC`
+  For programming and configuring the Barra Powertraim Control Module.
 - `FORscan`
-- `Arduino IDE`  
-- `Sublime Text`  
+  For diagnostics and fault finding.
+- `Arduino IDE`
+  For flashing the microcontroller used as the CAN interface.
+- `Sublime Text`
+  My preferred text editor for coding.
 - `Putty`
+  Used to SSH into the Raspberry Pi and and sniff CAN Data
+- `SocketCAN`
+  Used to pull raw CAN data from the vehicle.
+  
 
 
 ## Hardware Required
@@ -54,7 +62,7 @@ Code for the project Barra in a Beamer. Installing a Ford Falcon Barra engine in
 - Multimeter
 - J2534 Tool
 
-## Decoded CAN Messages
+## Decoding CAN Messages from the BMW PT-CAN
 Pulling Data from the car with a Raspberry Pi + SPI-MCP2515, wired up to PT-CAN_1 at Kombi connector, powered via OBD port
 ![image](https://github.com/jakka351/Barra-in-a-Beamer/assets/57064943/d7969ea6-c7de-4d09-abc5-f84470116992)
 
