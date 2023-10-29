@@ -62,7 +62,7 @@ Code for the project Barra in a Beamer. Installing a Ford Falcon Barra engine in
 - Multimeter
 - J2534 Tool
 
-## Decoding CAN Messages from the BMW PT-CAN
+## CAN data from the BMW PT-CAN
 Pulling Data from the car with a Raspberry Pi + SPI-MCP2515, wired up to PT-CAN_1 at Kombi connector, powered via OBD port
 ![image](https://github.com/jakka351/Barra-in-a-Beamer/assets/57064943/d7969ea6-c7de-4d09-abc5-f84470116992)
 
