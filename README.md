@@ -70,7 +70,14 @@ Pulling Data from the car with a Raspberry Pi + SPI-MCP2515, wired up to PT-CAN_
 Isolating individual ECUs to determine CAN frame origin
 ![image](https://github.com/jakka351/Barra-in-a-Beamer/assets/57064943/31ac2721-cd4f-4815-97c4-ac0c5073bd92)
 
+## Wiring Diagrams
 
+DDE:
+![image](https://github.com/jakka351/Barra-in-a-Beamer/assets/57064943/cfa4b5eb-1af5-404e-871e-82fe519e42bd)
+EGS:
+![image](https://github.com/jakka351/Barra-in-a-Beamer/assets/57064943/f73197c8-22e8-4075-9fe0-17d1df38406e)
+KOMBI:
+![image](https://github.com/jakka351/Barra-in-a-Beamer/assets/57064943/4d377c31-3ac2-4301-b0ed-2087dcacb129)  
 
   
 ## Relevant Information
@@ -78,7 +85,6 @@ Isolating individual ECUs to determine CAN frame origin
 [`Notes on Stand Alone PCM Setup`](https://forum.pcmtec.com/topic/32-howto-run-pcm-standalone-eg-engine-swap-pats-disable-and-speed-source-setup/)    
 [`Notes on ABS Module config`](https://forum.pcmtec.com/topic/872-howto-abs-reprogramming/)    
 [`BMW Kombi Pin out`](https://www.bimmerfest.com/threads/730d-instrument-cluster-pinout.1459534/#post-13880013)  
-![image](https://github.com/jakka351/Barra-in-a-Beamer/assets/57064943/4d377c31-3ac2-4301-b0ed-2087dcacb129)  
 
 
 ## Based Upon 
