@@ -71,8 +71,8 @@ Isolating individual ECUs to determine CAN frame origin
 ![image](https://github.com/jakka351/Barra-in-a-Beamer/assets/57064943/31ac2721-cd4f-4815-97c4-ac0c5073bd92)
 
 ## Wiring Diagrams
-
-DDE:
+  
+DDE:  
 ![image](https://github.com/jakka351/Barra-in-a-Beamer/assets/57064943/cfa4b5eb-1af5-404e-871e-82fe519e42bd)  
   
 EGS:  
