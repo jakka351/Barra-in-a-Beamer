@@ -70,9 +70,12 @@ Pulling Data from the car with a Raspberry Pi + SPI-MCP2515, wired up to PT-CAN_
 ![image](https://github.com/jakka351/Barra-in-a-Beamer/assets/57064943/31ac2721-cd4f-4815-97c4-ac0c5073bd92)
 
 ![image](https://github.com/jakka351/Barra-in-a-Beamer/assets/57064943/553801b9-066b-44ef-b9cc-68381c9b85f7)
-Isolating individual ECUs to determine CAN frame origin
+Isolating individual ECUs to determine CAN frame origin by pulling ECU power fuses.
 
-![Uploading image.png…]()
+![image](https://github.com/jakka351/Barra-in-a-Beamer/assets/57064943/73a76ba3-eaa8-41c5-bd63-7a080da7d32d)
+
+![image](https://github.com/jakka351/Barra-in-a-Beamer/assets/57064943/6be736bd-c33c-4d51-b5e1-4b0767ca1699)
+
 
 
 
