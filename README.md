@@ -32,6 +32,7 @@ Code for the project Barra in a Beamer. Installing a Ford Falcon Barra engine in
 - BMW shifter to run Ford 6HP26 `Gear Selector should function wired up to Ford 6HP26 Transmission` 
 - Engine Start/Stop Button  > `Auto Electrician`
 - Tyre/Wheel/final drive needs to be set in PCM
+- `Deutche plug kit to make up adaptor wiring harness for accelerator pedal assembly`
     
 ## Software Required  
 
