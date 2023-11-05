@@ -67,8 +67,14 @@ Code for the project Barra in a Beamer. Installing a Ford Falcon Barra engine in
 ## CAN data from the BMW PT-CAN
 Pulling Data from the car with a Raspberry Pi + SPI-MCP2515, wired up to PT-CAN_1 at Kombi connector, powered via OBD port
 ![image](https://github.com/jakka351/Barra-in-a-Beamer/assets/57064943/d7969ea6-c7de-4d09-abc5-f84470116992)
-Isolating individual ECUs to determine CAN frame origin
 ![image](https://github.com/jakka351/Barra-in-a-Beamer/assets/57064943/31ac2721-cd4f-4815-97c4-ac0c5073bd92)
+
+![image](https://github.com/jakka351/Barra-in-a-Beamer/assets/57064943/553801b9-066b-44ef-b9cc-68381c9b85f7)
+Isolating individual ECUs to determine CAN frame origin
+
+![Uploading image.png…]()
+
+
 
 ## Wiring Diagrams
   
