@@ -15,6 +15,8 @@
 <br/>
 <img align="right" src="https://raw.githubusercontent.com/jakka351/Barra-in-a-Beamer/main/docs/received_168803406282992.jpeg" height="25%" width="25%"/>
 
+## Summary 
+Using a dual CAN interface to recieve data from both the Barra CANbus and the BMW CANbus, and to transfer it between the buses. The two buses are to be isolated from each other, with data being transferred via the interface.
 
 ## Checklist Items
 - Decode Barra CAN Messages & Convert for BMW Cluster
