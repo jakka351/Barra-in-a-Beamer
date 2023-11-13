@@ -75,12 +75,18 @@ Pulling Data from the car with a Raspberry Pi + SPI-MCP2515, wired up to PT-CAN_
 ![image](https://github.com/jakka351/Barra-in-a-Beamer/assets/57064943/d7969ea6-c7de-4d09-abc5-f84470116992)
 ![image](https://github.com/jakka351/Barra-in-a-Beamer/assets/57064943/31ac2721-cd4f-4815-97c4-ac0c5073bd92)
 
-![image](https://github.com/jakka351/Barra-in-a-Beamer/assets/57064943/I 553801b9-066b-44ef-b9cc-68381c9b85f7)
+![image](https://github.com/jakka351/Barra-in-a-Beamer/assets/57064943/553801b9-066b-44ef-b9cc-68381c9b85f7)
+
 Isolating individual ECUs to determine CAN frame origin by pulling ECU power fuses.
 
 ![image](https://github.com/jakka351/Barra-in-a-Beamer/assets/57064943/73a76ba3-eaa8-41c5-bd63-7a080da7d32d)
 
 ![image](https://github.com/jakka351/Barra-in-a-Beamer/assets/57064943/6be736bd-c33c-4d51-b5e1-4b0767ca1699)
+
+Prototype interface board
+
+![image](https://raw.githubusercontent.com/jakka351/Barra-in-a-Beamer/main/docs/received_885704612911212.jpeg)  
+
 2nd OBD port wiring harness ready to be installed, with FEPS wiring and CAN High, CAN Low to enable diagnostics and programming of the barra PCM.
 ![image](https://raw.githubusercontent.com/jakka351/Barra-in-a-Beamer/main/docs/IMG_20231113_173439.jpg) 
 
