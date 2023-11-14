@@ -20,6 +20,7 @@ Using a dual CAN interface to recieve data from both the Barra CANbus and the BM
 
 ## Checklist Items
 - Decode Barra CAN Messages & Convert for BMW Cluster
+- `Implement checksum algo and counter for BMW data bytes 0 and 1 for sent messages`
 - Decode BMW DME CAN Messages that need to be emulated `emulator almost finished`
 - Malfunction Indicator Lamps from Barra PCM > BMW cluster
 - Set Vehicle Speed Source to be `ABS via CAN` in Barra PCM - 6HP26 TCM can provide speed source to PCM.
