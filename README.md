@@ -91,6 +91,8 @@ Prototype interface board
 2nd OBD port wiring harness ready to be installed, with FEPS wiring and CAN High, CAN Low to enable diagnostics and programming of the barra PCM.
 ![image](https://raw.githubusercontent.com/jakka351/Barra-in-a-Beamer/main/docs/IMG_20231113_173439.jpg) 
 
+## Calculating Checksums & Counters 
+  
 
 ## Wiring Diagrams
   
