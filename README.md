@@ -92,7 +92,8 @@ Prototype interface board
 ![image](https://raw.githubusercontent.com/jakka351/Barra-in-a-Beamer/main/docs/IMG_20231113_173439.jpg) 
 
 ## Calculating Checksums & Counters 
-Emulating the BMW checksum and counter byte on socketcan virtual interface  
+Each CAN Message that is sent out onto the PT-CAN contains both a checksum and a counter byte, the checksum is at byte[0] and the counter is byte [1].
+Here we are emulating the BMW checksum and counter byte on socketcan virtual interface. This has now been implemented into the Arduino code using a CRC8 checksum calculation.
 ![image](https://github.com/jakka351/Barra-in-a-Beamer/assets/57064943/1091dede-52fa-4216-9a85-5d3a112f7012)
 
 
