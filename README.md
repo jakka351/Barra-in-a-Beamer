@@ -1,13 +1,15 @@
 
 ![image](https://user-images.githubusercontent.com/57064943/163714778-8598c24a-6ae2-49f6-ba4c-42de94dfa025.png)  
 
-<img align="right" src="https://user-images.githubusercontent.com/57064943/166143780-9685fc0f-eeac-4459-9320-abc607407b39.png" height="25%" width="35%"/>
+<img align="right" src="https://user-images.githubusercontent.com/57064943/166143780-9685fc0f-eeac-4459-9320-abc607407b39.png" height="20%" width="35%"/>
 
 # Barra in a Beamer   [![image](https://img.shields.io/badge/%23-Arduino-lightgrey)](https://arduino.cc/)
 
 <sup>
 
 Installing a Ford Falcon Barra engine into a 2009 BMW F01 7 Series 730D. 
+<br/>
+<br/>
 <br/>
 
 </sup>
