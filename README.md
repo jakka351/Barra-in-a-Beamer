@@ -4,7 +4,7 @@
 
 # Barra in a Beamer   [![image](https://img.shields.io/badge/%23-Arduino-lightgrey)](https://arduino.cc/)
 <sup>
-<img align="right" src="https://pngimg.com/uploads/bmw/bmw_PNG99555.png" height="20%" width="20%"/>
+
   Code for the project Barra in a Beamer. Installing a Ford Falcon Barra engine into a 2009 BMW F01 7 Series 730D. 
 <br/></sup>
 
@@ -13,7 +13,7 @@
 
 
 <br/>
-<img align="right" src="https://raw.githubusercontent.com/jakka351/Barra-in-a-Beamer/main/docs/received_168803406282992.jpeg" height="25%" width="25%"/>
+<img align="right" src="https://pngimg.com/uploads/bmw/bmw_PNG99555.png" height="20%" width="20%"/>
 
 ## Summary 
 Using a dual CAN interface to recieve data from both the Barra CANbus and the BMW CANbus, and to transfer it between the buses. The two buses are to be isolated from each other, with data being transferred via the interface.
@@ -38,6 +38,10 @@ Using a dual CAN interface to recieve data from both the Barra CANbus and the BM
 - Engine Start/Stop Button  > `Auto Electrician`
 - Tyre/Wheel/final drive needs to be set in PCM
 - `Deutche plug kit to make up adaptor wiring harness for accelerator pedal assembly`
+
+
+<img align="right" src="https://raw.githubusercontent.com/jakka351/Barra-in-a-Beamer/main/docs/received_168803406282992.jpeg" height="25%" width="25%"/>
+
     
 ## Software Required  
 
