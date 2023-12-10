@@ -81,7 +81,7 @@ char msgString[128];                            // Array to store serial string
 unsigned char len = 0;                          //
 unsigned char rxBuf[8];                         //
 uint8_t checksum;             
-uint8_t Cnt3FD                       = 0;
+uint8_t Cnt3FD                       = 0x0;
 uint8_t counterDataRpm               = 0x0; // byte [1] counter, counts from 0x10-0x1E over and over for RPM DATA 
 uint8_t counterDataSpd               = 0x0; // byte [1] counter, counts from 0x10-0x1E over and over for RPM DATA
 uint8_t counterDataEct               = 0x0; // ENGINE COOLANT TEMP COUNTER BYTE 
@@ -89,7 +89,7 @@ uint8_t counterDataEctFlag           = 0x0; // ENGINE OVERHEAT MESSAGE COUNTER
 uint8_t counterEngineOilPressureFlag = 0x0; // Engine Oil Pressure Warning message counter
 uint8_t counterActualGearPos         = 0x0; // byte [1] counter, counts from 0x10-0x1E over and over for RPM DATA 
 uint8_t counterAlternatorFailureState= 0x0; // byte [1] counter, counts from 0x10-0x1E over and over for RPM DATA 
-uint8_t counter2                     = 0x0; // byte [1] counter, counts from 0x10-0x1E over and over for RPM DATA 
+uint8_t counterMilLampIlluminated    = 0x0; // byte [1] counter, counts from 0x10-0x1E over and over for RPM DATA 
 int V_VEH;                                      // Vehicle Speed 
 int CHKSM_V_V;                                  // checksum @ 0x1A0 Byte[7] 
 int Rpm;                                        // 
@@ -274,8 +274,13 @@ void loop()
                 // V_VEH    0   12  Intel   Unsigned    0.1 0   km/h 
                 unsigned char dataSpdPre[8] = {0x1A0, counterDataSpd, 0, 0, 0, 0, 0, V_VEH};
                 checksum = crc8.get_crc8(dataSpdPre, 8, 0x70, 1);
-                unsigned char dataSpd[8] = {checksum, counterDataRpm, 0, 0, 0, 0, 0, V_VEH};
+                unsigned char dataSpd[8] = {checksum, counterDataSpd, 0, 0, 0, 0, 0, V_VEH};
                 CAN1.sendMsgBuf(0x1A0, 0, 8, dataSpd);  // Send data to cluster for speed
+                counterDataSpd ++;
+                if (counterDataSpd == 0xF)
+                {
+                    counterDataRpm = 0x0;
+                }
                 Serial.println("Vehicle Speed data Tx.");
                 //delay(100);   
             }
@@ -374,8 +379,13 @@ void loop()
             checksum = crc8.get_crc8(sendActualGearPositionPre, 8, 0x70, 1);    
             unsigned char sendActualGearPosition[8] = {checksum, counterActualGearPos, actualGearPosition, 0, 0, 0, 0, 0}; //
             CAN1.sendMsgBuf(0xABC, 0, 8, sendActualGearPosition);
+            counterActualGearPos ++;
+            if (counterActualGearPos == 0xF)
+            {
+                counterActualGearPos = 0x0;
+            }
             Serial.println("Trans Gear Position data Tx.");
-            delay(100);
+            //delay(100);
         }
         // //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       
@@ -508,6 +518,11 @@ void loop()
                 checksum = crc8.get_crc8(engineOilPressureWarningPre, 8, 0x70, 1);
                 unsigned char engineOilPressureWarning[8] = {checksum, counterEngineOilPressureFlag, 0, 0, 0, 0, 0, 0}; // MIL LAMP MESSAGE FOR KOMBI 
                 CAN1.sendMsgBuf(0xABC, 0, 8, engineOilPressureWarning);
+                counterEngineOilPressureFlag ++;
+                if (counterEngineOilPressureFlag == 0xF)
+                {
+                    counterEngineOilPressureFlag = 0x0;
+                }
                 Serial.println("[Barra PCM] Engine Oil Pressure Warning.");   
             }
             else if ((int)buf[5] == 0x20)            
@@ -518,9 +533,14 @@ void loop()
                 checksum = crc8.get_crc8(alternatorFailureStatePre, 8, 0x70, 1);
                 unsigned char alternatorFailureState[8] = {checksum, counterAlternatorFailureState, alternatorFailureStateLight, 0, 0, 0, 0, 0}; // MIL LAMP MESSAGE FOR KOMBI 
                 CAN1.sendMsgBuf(0xABC, 0, 8, alternatorFailureState);
+                counterAlternatorFailureState ++;
+                if (counterAlternatorFailureState == 0xF)
+                {
+                    counterAlternatorFailureState = 0x0;
+                }
                 Serial.println("[Barra PCM] Alternator Failure State.");   
             }
-            else if ((int)buf[5] == 0x08)            
+            else if ((int)buf[5] == 0x08)        // remove this as it is doubling up and the same function is above //    
             {
                 flagEngineOverHeatWarning = true;
                 unsigned char engineOverHeatWarning[8] = {0, 0, 0, 0, 0, 0, 0, 0}; // MIL LAMP MESSAGE FOR KOMBI 
@@ -531,11 +551,20 @@ void loop()
             {
                 // send can message to illuminate Kombi check engine light here
                 flagMilLampIlluminated = true;
-                unsigned char milLampIlluminated[8] = {0, 0, 0, 0, 0, 0, 0, 0}; // MIL LAMP MESSAGE FOR KOMBI 
+                int milLampIlluminatedFlag = 0x01;
+                unsigned char milLampIlluminatedPre[8] = {0xABC, counterMilLampIlluminated, milLampIlluminatedFlag, 0, 0, 0, 0, 0};
+                checksum = crc8.get_crc8(milLampIlluminatedPre, 8, 0x70, 1);
+                unsigned char milLampIlluminated[8] = {checksum, counterMilLampIlluminated, milLampIlluminatedFlag, 0, 0, 0, 0, 0}; // MIL LAMP MESSAGE FOR KOMBI 
                 CAN1.sendMsgBuf(0xABC, 0, 8, milLampIlluminated);
+                counterMilLampIlluminated ++;
+                if (counterMilLampIlluminated == 0xF)
+                {
+                    counterMilLampIlluminated = 0x0;
+                }
+
                 Serial.println("[Barra PCM] MIL Lamp Illuminated.");   
             }
-            delay(100); // one delay of 100 MS per CAN ID, not individual byte functions....too slow otherwise..lags
+            //delay(100); // one delay of 100 MS per CAN ID, not individual byte functions....too slow otherwise..lags
             
             // ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         }
@@ -571,7 +600,7 @@ void loop()
         // V_WHL_RRH: 0km/h
         // ASSUMING THAT VEHICLE SPEED SOURCE IS SET TO 'ABS via CAN' with PCMTEC, WE NEED TO PROVIDE THAT SIGNAL FOR THE BARRA PCM VIA THE CANBUS
         // Recieve ABS individual wheel speed signals from BMW ABS module, and re-transmit on ID 0x4B0 for Barra PCM
-        if (canId == 0x0CE) // BMW WHEEL SPEED ID FROM ABS
+        if (canId == 0x0CE) // BMW WHEEL SPEED ID FROM ABS CAN1
         {
             int wheelSpeedFrontLeft1  = (int)buf[0]; // BMW DATA is * 0.0625
             int wheelSpeedFrontLeft2  = (int)buf[1];
