@@ -58,6 +58,7 @@
 #include <mcp_can.h>
 #include <mcp_can_dfs.h>
 #include "CRC8.h"
+//#include "CRC8.cpp"
 // ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // ////                     .__      ___.   .__                 
 // //// ___  _______ _______|__|____ \_ |__ |  |   ____   ______
@@ -67,18 +68,28 @@
 // ////             \/              \/    \/          \/     \/
 // //// 
 // ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-const int SPI_CS_PIN = 3;                  // CANBed M0
-const int SPI_MCP2515_CS_PIN = 5;                  // CANBed M0
-MCP_CAN CAN(SPI_CS_PIN);                                    // Set CS pin
-MCP_CAN CAN1(SPI_MCP2515_CS_PIN);                                    // Set CS pin
 // const int SPI_CS_PIN = 9;               // CAN Bus Shield
 // const int SPI_CS_PIN = 17;              // CANBed V1
 CRC8 crc8;
+const int SPI_CS_PIN                 = 3;                  // CANBed M0
+const int SPI_MCP2515_CS_PIN         = 5;                  // CANBed M0
+MCP_CAN CAN(SPI_CS_PIN);                                    // Set CS pin
+MCP_CAN CAN1(SPI_MCP2515_CS_PIN);                                    // Set CS pin
 long unsigned int canId;                         //
+char mes[8]                          = { 0, 0, 0, 0, 0, 0, 0, 0 };
+char msgString[128];                            // Array to store serial string
 unsigned char len = 0;                          //
 unsigned char rxBuf[8];                         //
-char msgString[128];                            // Array to store serial string
-int counterDataRpm = 0x10; // byte [1] counter, counts from 0x10-0x1E over and over for RPM DATA 
+uint8_t checksum;             
+uint8_t Cnt3FD                       = 0;
+uint8_t counterDataRpm               = 0x0; // byte [1] counter, counts from 0x10-0x1E over and over for RPM DATA 
+uint8_t counterDataSpd               = 0x0; // byte [1] counter, counts from 0x10-0x1E over and over for RPM DATA
+uint8_t counterDataEct               = 0x0; // ENGINE COOLANT TEMP COUNTER BYTE 
+uint8_t counterDataEctFlag           = 0x0; // ENGINE OVERHEAT MESSAGE COUNTER
+uint8_t counterEngineOilPressureFlag = 0x0; // Engine Oil Pressure Warning message counter
+uint8_t counterActualGearPos         = 0x0; // byte [1] counter, counts from 0x10-0x1E over and over for RPM DATA 
+uint8_t counterAlternatorFailureState= 0x0; // byte [1] counter, counts from 0x10-0x1E over and over for RPM DATA 
+uint8_t counter2                     = 0x0; // byte [1] counter, counts from 0x10-0x1E over and over for RPM DATA 
 int V_VEH;                                      // Vehicle Speed 
 int CHKSM_V_V;                                  // checksum @ 0x1A0 Byte[7] 
 int Rpm;                                        // 
@@ -112,8 +123,6 @@ bool flagAirConShedLoad;
 bool flagDtcLoggingHighSpeedCan;
 bool flagMilLampIlluminated;
 bool flagEngineCoolantOverTemperatureWarning;
-uint8_t Cnt3FD = 0;
-char mes[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
 // ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // ////                __                
 // ////   ______ _____/  |_ __ ________  
@@ -163,7 +172,7 @@ void send3FD()
     mes[2] = 0x00;
     mes[3] = 0x00;
     mes[4] = 0x00;
-    CAN.sendMsgBuf(0x3FD, 0, 5, mes);
+    CAN1.sendMsgBuf(0x3FD, 0, 5, mes);
     Cnt3FD++;
     if (Cnt3FD == 0xF) 
     {
@@ -171,7 +180,7 @@ void send3FD()
     }
     mes[0] = 0xFF;
     mes[1] = 0;
-    CAN.sendMsgBuf(0x202, 0, 2, mes);
+    CAN1.sendMsgBuf(0x202, 0, 2, mes);
 }
 
 // ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -263,10 +272,12 @@ void loop()
                 //////////////////////////////////////
                 // CAN ID 0x1A0 Byte 0 - Vehicle Speed 
                 // V_VEH    0   12  Intel   Unsigned    0.1 0   km/h 
-                unsigned char dataSpd[8] = {V_VEH, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, CHKSM_V_V};
-                CAN.sendMsgBuf(0x1A0, 0, 8, dataSpd);  // Send data to cluster for speed
+                unsigned char dataSpdPre[8] = {0x1A0, counterDataSpd, 0, 0, 0, 0, 0, V_VEH};
+                checksum = crc8.get_crc8(dataSpdPre, 8, 0x70, 1);
+                unsigned char dataSpd[8] = {checksum, counterDataRpm, 0, 0, 0, 0, 0, V_VEH};
+                CAN1.sendMsgBuf(0x1A0, 0, 8, dataSpd);  // Send data to cluster for speed
                 Serial.println("Vehicle Speed data Tx.");
-                delay(100);   
+                //delay(100);   
             }
             //////////////////////////////////////////////////////////////////
             float tmpRpm = (Valx0 + (Valx1 / 255)) * 2;
@@ -277,18 +288,17 @@ void loop()
                 RPM_TEMP_DOM_2 = Rpm;
                 Serial.println("RPM: ");
                 Serial.println(Rpm);             
-                uint8_t checksum;             
                 unsigned char dataRpmPre[8] = {0xF3, counterDataRpm, 0, 0, 0, 0, RPM_TEMP_DOM_1, RPM_TEMP_DOM_2};
                 checksum = crc8.get_crc8(dataRpmPre, 8, 0x70, 1);
                 unsigned char dataRpm[8] = {checksum, counterDataRpm, 0, 0, 0, 0, RPM_TEMP_DOM_1, RPM_TEMP_DOM_2};
-                CAN.sendMsgBuf(0x0F3, 0, 8, dataRpm); // send data to cluster for rpm
+                CAN1.sendMsgBuf(0x0F3, 0, 8, dataRpm); // send data to cluster for rpm
                 counterDataRpm ++;
                 if (counterDataRpm == 0xF)
                 {
                     counterDataRpm = 0x0;
                 }
                 Serial.println("Engine RPM data Tx.");
-                delay(100);
+                //delay(100);
             }
             //////////////////////////////////////////////////////////////////
         }
@@ -360,8 +370,10 @@ void loop()
                     Serial.println("Trans Gear: Invalid Data");
                     break;
             }
-            unsigned char sendActualGearPosition[8] = {actualGearPosition, 0, 0, 0, 0, 0, 0, 0}; //
-            CAN.sendMsgBuf(0xABC, 0, 8, sendActualGearPosition);
+            unsigned char sendActualGearPositionPre[8] = {0xABC, counterActualGearPos, actualGearPosition, 0, 0, 0, 0, 0};
+            checksum = crc8.get_crc8(sendActualGearPositionPre, 8, 0x70, 1);    
+            unsigned char sendActualGearPosition[8] = {checksum, counterActualGearPos, actualGearPosition, 0, 0, 0, 0, 0}; //
+            CAN1.sendMsgBuf(0xABC, 0, 8, sendActualGearPosition);
             Serial.println("Trans Gear Position data Tx.");
             delay(100);
         }
@@ -421,9 +433,26 @@ void loop()
             if (flagEngineCoolantOverTemperatureWarning == true)
             {
                 // Flash Coolant OverHeat + Check Engine Light on Cluster.
+                int engineCoolantTemperatureCheckEngineLight = 0x01;
+                unsigned char flagEngineCoolantOverTemperatureWarningPre[8] = {0xABC, counterDataEctFlag, engineCoolantTemperatureCheckEngineLight, 0, 0, 0, 0, 0};
+                checksum = crc8.get_crc8(flagEngineCoolantOverTemperatureWarningPre, 8, 0x70, 1);
+                unsigned char flagEngineCoolantOverTemperatureWarning[8] = {checksum, counterDataEctFlag, engineCoolantTemperatureCheckEngineLight, 0, 0, 0, 0, 0}; //
+                CAN1.sendMsgBuf(0xABC, 0, 8, flagEngineCoolantOverTemperatureWarning);
+                counterDataEctFlag ++;
+                if (counterDataEctFlag == 0xF)
+                {
+                    counterDataEctFlag = 0x0;
+                }
             }
-            unsigned char sendEngineCoolantTemperature[8] = {engineCoolantTemperature, 0, 0, 0, 0, 0, 0, 0}; //
-            CAN.sendMsgBuf(0xABC, 0, 8, sendEngineCoolantTemperature);
+            unsigned char sendEngineCoolantTemperaturePre[8] = {0xABC, counterDataEct, engineCoolantTemperature, 0, 0, 0, 0, 0};
+            checksum = crc8.get_crc8(sendEngineCoolantTemperaturePre, 8, 0x70, 1);
+            unsigned char sendEngineCoolantTemperature[8] = {checksum, counterDataEct, engineCoolantTemperature, 0, 0, 0, 0, 0}; //
+            CAN1.sendMsgBuf(0xABC, 0, 8, sendEngineCoolantTemperature);
+            counterDataEct ++;
+            if (counterDataEct == 0xF)
+            {
+                counterDataEct = 0x0;
+            }
             Serial.println("Engine Coolant Temperature Tx data.");
             // ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
    
@@ -474,22 +503,28 @@ void loop()
             else if ((int)buf[5] == 0x10)            
             {
                 flagEngineOilPressureWarning = true;
-                unsigned char engineOilPressureWarning[8] = {0, 0, 0, 0, 0, 0, 0, 0}; // MIL LAMP MESSAGE FOR KOMBI 
-                CAN.sendMsgBuf(0xABC, 0, 8, engineOilPressureWarning);
+                int engineOilPressureWarningLight = 0x01;
+                unsigned char engineOilPressureWarningPre[8] = {0xABC, counterEngineOilPressureFlag, engineOilPressureWarningLight, 0, 0, 0, 0, 0};
+                checksum = crc8.get_crc8(engineOilPressureWarningPre, 8, 0x70, 1);
+                unsigned char engineOilPressureWarning[8] = {checksum, counterEngineOilPressureFlag, 0, 0, 0, 0, 0, 0}; // MIL LAMP MESSAGE FOR KOMBI 
+                CAN1.sendMsgBuf(0xABC, 0, 8, engineOilPressureWarning);
                 Serial.println("[Barra PCM] Engine Oil Pressure Warning.");   
             }
             else if ((int)buf[5] == 0x20)            
             {
                 flagAlternatorFailureState = true;
-                unsigned char alternatorFailureState[8] = {0, 0, 0, 0, 0, 0, 0, 0}; // MIL LAMP MESSAGE FOR KOMBI 
-                CAN.sendMsgBuf(0xABC, 0, 8, alternatorFailureState);
+                int alternatorFailureStateLight = 0x01;
+                unsigned char alternatorFailureStatePre[8] = {0xABC, counterAlternatorFailureState, alternatorFailureStateLight, 0, 0, 0, 0, 0};
+                checksum = crc8.get_crc8(alternatorFailureStatePre, 8, 0x70, 1);
+                unsigned char alternatorFailureState[8] = {checksum, counterAlternatorFailureState, alternatorFailureStateLight, 0, 0, 0, 0, 0}; // MIL LAMP MESSAGE FOR KOMBI 
+                CAN1.sendMsgBuf(0xABC, 0, 8, alternatorFailureState);
                 Serial.println("[Barra PCM] Alternator Failure State.");   
             }
             else if ((int)buf[5] == 0x08)            
             {
                 flagEngineOverHeatWarning = true;
                 unsigned char engineOverHeatWarning[8] = {0, 0, 0, 0, 0, 0, 0, 0}; // MIL LAMP MESSAGE FOR KOMBI 
-                CAN.sendMsgBuf(0xABC, 0, 8, engineOverHeatWarning);
+                CAN1.sendMsgBuf(0xABC, 0, 8, engineOverHeatWarning);
                 Serial.println("[Barra PCM] Engine Over Heat Warning.");   
             }
             else if ((int)buf[6] == 0x02 | 0x03)            
@@ -497,7 +532,7 @@ void loop()
                 // send can message to illuminate Kombi check engine light here
                 flagMilLampIlluminated = true;
                 unsigned char milLampIlluminated[8] = {0, 0, 0, 0, 0, 0, 0, 0}; // MIL LAMP MESSAGE FOR KOMBI 
-                CAN.sendMsgBuf(0xABC, 0, 8, milLampIlluminated);
+                CAN1.sendMsgBuf(0xABC, 0, 8, milLampIlluminated);
                 Serial.println("[Barra PCM] MIL Lamp Illuminated.");   
             }
             delay(100); // one delay of 100 MS per CAN ID, not individual byte functions....too slow otherwise..lags
@@ -616,6 +651,26 @@ void loop()
                 Serial.println("\t");
             }
         }
+        if (canId == 0x7E1)            // TCM_DiagSig_Rx (From tester)
+        {
+            Serial.println("TCM_DiagSig_Rx: ");
+            Serial.println(canId, HEX);
+            for(int i = 0; i<len; i++)    // print the data
+            {
+                Serial.println(buf[i], HEX);
+                Serial.println("\t");
+            }
+        }
+        if (canId == 0x7E9)            // TCM_DiagSig_Tx (From ECU)
+        {
+            Serial.println("TCM_DiagSig_Tx: ");
+            Serial.println(canId, HEX);
+            for(int i = 0; i<len; i++)    // print the data
+            {
+                Serial.println(buf[i], HEX);
+                Serial.println("\t");
+            }
+        }
         // //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     }
 }
@@ -623,4 +678,3 @@ void loop()
 /*********************************************************************************************************
   END FILE
 *********************************************************************************************************/
-
