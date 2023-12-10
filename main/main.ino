@@ -72,7 +72,7 @@
 // const int SPI_CS_PIN = 17;              // CANBed V1
 CRC8 crc8;
 const int SPI_CS_PIN                 = 3;                  // CANBed M0
-const int SPI_MCP2515_CS_PIN         = 5;                  // CANBed M0
+const int SPI_MCP2515_CS_PIN         = 10;                  // CANBed M0
 MCP_CAN CAN(SPI_CS_PIN);                                    // Set CS pin
 MCP_CAN CAN1(SPI_MCP2515_CS_PIN);                                    // Set CS pin
 long unsigned int canId;                         //
@@ -254,6 +254,7 @@ void loop()
         // powertrainControlModule code notesL
         // CAN ID 0x207 Data Bytes:  [0]EngineRPM [1]EngineRPM [2]EngineSpeedRateOfChange [3]EngineSpeedRateOfChange [4]VehicleSpeed  [5]VehicleSpeed  [6]ThrottlePositionManifold  [7]ThrottlePositionRateOfChange
         // Code for Vehicle Speed and Engine RPM recieved from Barra PCM, then transmitted out to BMW Kombi for speed and tacho display on cluster.
+        // Vehicle Speedo readout for BMW Kombi likely comes from ABS
         if (canId == 0x207) 
         {
             //////////////////////////////////////////////////////////////////
@@ -279,7 +280,7 @@ void loop()
                 counterDataSpd ++;
                 if (counterDataSpd == 0xF)
                 {
-                    counterDataRpm = 0x0;
+                    counterDataSpd = 0x0;
                 }
                 Serial.println("Vehicle Speed data Tx.");
                 //delay(100);   
@@ -516,7 +517,7 @@ void loop()
                 int engineOilPressureWarningLight = 0x01;
                 unsigned char engineOilPressureWarningPre[8] = {0xABC, counterEngineOilPressureFlag, engineOilPressureWarningLight, 0, 0, 0, 0, 0};
                 checksum = crc8.get_crc8(engineOilPressureWarningPre, 8, 0x70, 1);
-                unsigned char engineOilPressureWarning[8] = {checksum, counterEngineOilPressureFlag, 0, 0, 0, 0, 0, 0}; // MIL LAMP MESSAGE FOR KOMBI 
+                unsigned char engineOilPressureWarning[8] = {checksum, counterEngineOilPressureFlag, engineOilPressureWarningLight, 0, 0, 0, 0, 0}; // MIL LAMP MESSAGE FOR KOMBI 
                 CAN1.sendMsgBuf(0xABC, 0, 8, engineOilPressureWarning);
                 counterEngineOilPressureFlag ++;
                 if (counterEngineOilPressureFlag == 0xF)
