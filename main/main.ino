@@ -90,6 +90,19 @@ uint8_t counterEngineOilPressureFlag = 0x0; // Engine Oil Pressure Warning messa
 uint8_t counterActualGearPos         = 0x0; // byte [1] counter, counts from 0x10-0x1E over and over for RPM DATA 
 uint8_t counterAlternatorFailureState= 0x0; // byte [1] counter, counts from 0x10-0x1E over and over for RPM DATA 
 uint8_t counterMilLampIlluminated    = 0x0; // byte [1] counter, counts from 0x10-0x1E over and over for RPM DATA 
+uint8_t counter08F                   = 0x0;
+uint8_t counter0A5                   = 0x0;
+uint8_t counter0A6                   = 0x0;
+uint8_t counter0A7                   = 0x0;
+uint8_t counter0D9                   = 0x0;
+uint8_t counter0DC                   = 0x0;
+//uint8_t counter0F3                   = 0x0;
+uint8_t counter281                   = 0x0;
+uint8_t counter2C4                   = 0x0;
+uint8_t counter2FC                   = 0x0;
+uint8_t counter349                   = 0x0;
+uint8_t counter3A0                   = 0x0;
+uint8_t counter3BE                   = 0x0;
 int V_VEH;                                      // Vehicle Speed 
 int CHKSM_V_V;                                  // checksum @ 0x1A0 Byte[7] 
 int Rpm;                                        // 
@@ -137,13 +150,18 @@ void setup()
     Serial.begin(115200);
     crc8.begin();
     // Initialize MCP2515 running at 16MHz with a baudrate of 500kb/s and the masks and filters disabled.
-    while (CAN_OK != CAN.begin(CAN_500KBPS), CAN1.begin(CAN_500KBPS))  // init can bus : baudrate = 500k  8MHZ crystal
+    while (CAN_OK != CAN.begin(CAN_500KBPS))  // init can bus : baudrate = 500k  8MHZ crystal
     {
-        Serial.println("[ Barra in a Beamer //  Error Initializing MCP2515. ]");
+        Serial.println("[ Barra in a Beamer //  Error Initializing MCP2515. can0 ]");
         delay(100);
     }
-    Serial.println("[ Barra in a Beamer // MCP2515 Initialized can0 up, can1 up]");
-    Serial.println("Time Stamp,ID,Extended,LEN,D1,D2,D3,D4,D5,D6,D7,D8");
+    Serial.println("[ Barra in a Beamer // MCP2515 Initialized can0 up");  
+    while (CAN_OK != CAN1.begin(CAN_500KBPS))  // init can bus : baudrate = 500k  8MHZ crystal
+    {
+        Serial.println("[ Barra in a Beamer //  Error Initializing MCP2515. can1 ]");
+        delay(100);
+    }
+    Serial.println("[ Barra in a Beamer // MCP2515 Initialized can1 up]");
     // ////////////////////////////////////////////////////////////////////////////
     //  ________                .__        _________                             
     //  \______ \ _____    _____|  |__    /   _____/_  _  __ ____   ____ ______  
@@ -208,20 +226,129 @@ void loop()
     //    0x349
     //    0x3A0
     //    0x3BE
-    //    CAN.sendMsgBuf(0x08F, 0, 8, {0, 0, 0, 0, 0, 0, 0, 0});
-    //    CAN.sendMsgBuf(0x0A5, 0, 8, {0, 0, 0, 0, 0, 0, 0, 0});
-    //    CAN.sendMsgBuf(0x0A6, 0, 8, {0, 0, 0, 0, 0, 0, 0, 0});
-    //    CAN.sendMsgBuf(0x0A7, 0, 7, {0, 0, 0, 0, 0, 0, 0});
-    //    CAN.sendMsgBuf(0x0D9, 0, 8, {0, 0, 0, 0, 0, 0, 0, 0});
-    //    CAN.sendMsgBuf(0x0DC, 0, 6, {0, 0, 0, 0, 0, 0});
-    //    CAN.sendMsgBuf(0x0F3, 0, 8, {0, 0, 0, 0, 0, 0, 0, 0});
-    //    CAN.sendMsgBuf(0x281, 0, 2, {0, 0});
-    //    CAN.sendMsgBuf(0x2C4, 0, 8, {0, 0, 0, 0, 0, 0, 0, 0});
-    //    CAN.sendMsgBuf(0x2FC, 0, 7, {0, 0, 0, 0, 0, 0, 0});
-    //    CAN.sendMsgBuf(0x349, 0, 5, {0, 0, 0, 0, 0});
-    //    CAN.sendMsgBuf(0x3A0, 0, 8, {0, 0, 0, 0, 0, 0, 0, 0});
-    //    CAN.sendMsgBuf(0x3BE, 0, 2, {0, 0});
-    //delay(50);
+    unsigned char send08FPre[8] = {0x1A0, counter08F, 0, 0, 0, 0, 0, 0};
+    checksum = crc8.get_crc8(send08FPre, 8, 0x70, 1);
+    unsigned char send08F[8] = {checksum, counter08F, 0, 0, 0, 0, 0, 0};
+    CAN.sendMsgBuf(0x08F, 0, 8, send08F);
+    counter08F ++;
+    if (counter08F == 0xF)
+    {
+        counter08F = 0x0;
+    }
+
+    unsigned char send0A5Pre[8] = {0x1A0, counter0A5, 0, 0, 0, 0, 0, 0};
+    checksum = crc8.get_crc8(send0A5Pre, 8, 0x70, 1);
+    unsigned char send0A5[8] = {checksum, counter0A5, 0, 0, 0, 0, 0, 0};
+    CAN.sendMsgBuf(0x0A5, 0, 8, send0A5);
+    counter0A5 ++;
+    if (counter0A5 == 0xF)
+    {
+        counter0A5 = 0x0;
+    }
+    
+    unsigned char send0A6Pre[8] = {0x0A6, counter0A6, 0, 0, 0, 0, 0, 0};
+    checksum = crc8.get_crc8(send0A6Pre, 8, 0x70, 1);
+    unsigned char send0A6[8] = {checksum, counter0A6, 0, 0, 0, 0, 0, 0};
+    CAN.sendMsgBuf(0x0A6, 0, 8, send0A6);
+    counter0A6 ++;
+    if (counter0A6 == 0xF)
+    {
+        counter0A7 = 0x0;
+    }
+    
+    unsigned char send0A7Pre[8] = {0x0A7, counter0A7, 0, 0, 0, 0, 0, 0};
+    checksum = crc8.get_crc8(send0A7Pre, 8, 0x70, 1);
+    unsigned char send0A7[8] = {checksum, counter0A7, 0, 0, 0, 0, 0, 0};
+    CAN1.sendMsgBuf(0x0A7, 0, 7, send0A7);
+    counter0A7 ++;
+    if (counter0A7 == 0xF)
+    {
+        counter0A7 = 0x0;
+    }
+    
+
+    unsigned char send0D9Pre[8] = {0x0D9, counter0D9, 0, 0, 0, 0, 0, 0};
+    checksum = crc8.get_crc8(send0D9Pre, 8, 0x70, 1);
+    unsigned char send0D9[8] = {checksum, counter0D9, 0, 0, 0, 0, 0, 0};
+    CAN1.sendMsgBuf(0x0D9, 0, 8, send0D9);
+    counter0D9 ++;
+    if (counter0D9 == 0xF)
+    {
+        counter0D9 = 0x0;
+    }
+    
+    unsigned char send0DCPre[6] = {0x0DC, counter0DC, 0, 0, 0, 0};
+    checksum = crc8.get_crc8(send0DCPre, 6, 0x70, 1); /// may need editing
+    unsigned char send0DC[6] = {checksum, counter0DC, 0, 0, 0, 0};
+    CAN1.sendMsgBuf(0x0DC, 0, 6, send0DC);
+    counter0DC ++;
+    if (counter0DC == 0xF)
+    {
+        counter0DC = 0x0;
+    }
+    
+    unsigned char send281Pre[2] = {0x281, counter281};
+    checksum = crc8.get_crc8(send281Pre, 2, 0x70, 1); // may need editing
+    unsigned char send281[2] = {checksum, counter0D9};
+    CAN1.sendMsgBuf(0x281, 0, 2, send281);
+    counter281 ++;
+    if (counter281 == 0xF)
+    {
+        counter281 = 0x0;
+    }
+    
+    unsigned char send2C4Pre[8] = {0x2C4, counter2C4, 0, 0, 0, 0, 0, 0};
+    checksum = crc8.get_crc8(send2C4Pre, 8, 0x70, 1);
+    unsigned char send2C4[8] = {checksum, counter2C4, 0, 0, 0, 0, 0, 0};
+    CAN1.sendMsgBuf(0x2C4, 0, 8, send2C4);
+    counter2C4 ++;
+    if (counter2C4 == 0xF)
+    {
+        counter2C4 = 0x0;
+    }
+    
+    unsigned char send2FCPre[7] = {0x2FC, counter2FC, 0, 0, 0, 0, 0};
+    checksum = crc8.get_crc8(send2FCPre, 7, 0x70, 1);
+    unsigned char send2FC[7] = {checksum, counter2FC, 0, 0, 0, 0, 0};
+    CAN1.sendMsgBuf(0x2FC, 0, 7, send2FC);
+    counter2FC ++;
+    if (counter2FC == 0xF)
+    {
+        counter2FC = 0x0;
+    }
+    
+    unsigned char send349Pre[5] = {0x349, counter349, 0, 0, 0};
+    checksum = crc8.get_crc8(send349Pre, 8, 0x70, 1);
+    unsigned char send349[5] = {checksum, counter349, 0, 0, 0};
+    CAN1.sendMsgBuf(0x349, 0, 5, send349);
+    counter349 ++;
+    if (counter349 == 0xF)
+    {
+        counter349 = 0x0;
+    }
+    
+    unsigned char send3A0Pre[8] = {0x3A0, counter3A0, 0, 0, 0, 0, 0, 0};
+    checksum = crc8.get_crc8(send3A0Pre, 8, 0x70, 1);
+    unsigned char send3A0[8] = {checksum, counter3A0, 0, 0, 0, 0, 0, 0};
+    CAN1.sendMsgBuf(0x3A0, 0, 8, send3A0);
+    counter3A0 ++;
+    if (counter3A0 == 0xF)
+    {
+        counter3A0 = 0x0;
+    }
+    
+    unsigned char send3BEPre[2] = {0x3BE, counter3BE};
+    checksum = crc8.get_crc8(send3BEPre, 2, 0x70, 1);
+    unsigned char send3BE[8] = {checksum, counter3BE};
+    CAN.sendMsgBuf(0x3BE, 0, 2, send3BE);
+    Serial.println("[ SENT 0x3BE ]");
+    counter3BE ++;
+    if (counter3BE == 0xF)
+    {
+        counter3BE = 0x0;
+    }
+    
+    delay(100);
     // put your main code here, to run repeatedly:
     // ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     //                             .__                                   ___.                                                                              
@@ -236,7 +363,7 @@ void loop()
     {
     // ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         CAN.readMsgBuf(&len, buf);    // read data,  len: data length, buf: data buf
-        Serial.println("Read CAN Message Buffer:");
+        Serial.println("CANbus: Barra HighSpeed CAN:");
         unsigned long canId = CAN.getCanId();        
         // ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         // _______         ________________________  __________                            __                .__         _________                __                .__       _____             .___    .__          
@@ -569,61 +696,6 @@ void loop()
             
             // ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         }
-        // ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        // _______            ______________________       _____ __________  _________  __      __.__                  .__      _________                        .___   _____              ___________________     _____   
-        // \   _  \ ___  ___ /  |  \______   \   _  \     /  _  \\______   \/   _____/ /  \    /  \  |__   ____   ____ |  |    /   _____/_____   ____   ____   __| _/ _/ ____\___________  \______   \_   ___ \   /     \  
-        // /  /_\  \\  \/  //   |  ||    |  _/  /_\  \   /  /_\  \|    |  _/\_____  \  \   \/\/   /  |  \_/ __ \_/ __ \|  |    \_____  \\____ \_/ __ \_/ __ \ / __ |  \   __\/  _ \_  __ \  |     ___/    \  \/  /  \ /  \ 
-        // \  \_/   \>    </    ^   /    |   \  \_/   \ /    |    \    |   \/        \  \        /|   Y  \  ___/\  ___/|  |__  /        \  |_> >  ___/\  ___// /_/ |   |  | (  <_> )  | \/  |    |   \     \____/    Y    \
-        //  \_____  /__/\_ \____   ||______  /\_____  / \____|__  /______  /_______  /   \__/\  / |___|  /\___  >\___  >____/ /_______  /   __/ \___  >\___  >____ |   |__|  \____/|__|     |____|    \______  /\____|__  /
-        //        \/      \/    |__|       \/       \/          \/       \/        \/         \/       \/     \/     \/               \/|__|        \/     \/     \/                                         \/         \/ // 
-        // FALCON WHEEL SPEED SIGNAL:
-        // Antilock Brake Module   Wheel Speed Sensor  4B0 8   
-        // WheelSpeedFrontLeft Units:km/h   Offset:0;Multi:1;Div:100   0xFFFE=Initialization in progress   0xFFFF=Wheel Speed Faulted          
-        // WheelSpeedFrontLeft Units:km/h  Offset:0;Multi:1;Div:100  0xFFFE=Initialization in progress  0xFFFF=Wheel Speed Faulted         
-        // FrontRightWheelSpeed  Units:km/h  Offset:0;Multi:1;Div:100  0xFFFE=Initialization in progress  0xFFFF=Wheel Speed Faulted   
-        // FrontRightWheelSpeed    RearLeftWheelSpeed  RearLeftWheelSpeed  RightRearWheelSpeed RightRearWheelSpeed
-        // BMW WHEEL SPEED SIGNAL:
-        // CAN ID 0xCE Wheel rotating speed:
-        // ID: 0x0CE
-        // DLC: 8
-        // Tx method: cycle
-        // Cycle time: 20ms
-        // Signal  Start bit   Length  Order   Value type  Factor  Offset  Unit
-        // V_WHL_FLH   0   16  Intel   Signed  0.0625  0   km/h
-        // V_WHL_FRH   16  16  Intel   Signed  0.0625  0   km/h
-        // V_WHL_RLH   32  16  Intel   Signed  0.0625  0   km/h
-        // V_WHL_RRH   48  16  Intel   Signed  0.0625  0   km/h
-        // Message example:        // 
-        // 0xCE 8 00 00 00 00 00 00 00 00
-        // V_WHL_FLH: 0km/h
-        // V_WHL_FRH: 0km/h
-        // V_WHL_RLH: 0km/h
-        // V_WHL_RRH: 0km/h
-        // ASSUMING THAT VEHICLE SPEED SOURCE IS SET TO 'ABS via CAN' with PCMTEC, WE NEED TO PROVIDE THAT SIGNAL FOR THE BARRA PCM VIA THE CANBUS
-        // Recieve ABS individual wheel speed signals from BMW ABS module, and re-transmit on ID 0x4B0 for Barra PCM
-        if (canId == 0x0CE) // BMW WHEEL SPEED ID FROM ABS CAN1
-        {
-            int wheelSpeedFrontLeft1  = (int)buf[0]; // BMW DATA is * 0.0625
-            int wheelSpeedFrontLeft2  = (int)buf[1];
-            int wheelSpeedFrontRight1 = (int)buf[2];
-            int wheelSpeedFrontRight2 = (int)buf[3];
-            int wheelSpeedRearLeft1   = (int)buf[4];
-            int wheelSpeedRearLeft2   = (int)buf[5];
-            int wheelSpeedRearRight1  = (int)buf[6];
-            int wheelSpeedRearRight2  = (int)buf[7];
-            unsigned char wheelSpeedSignalData[8] = {wheelSpeedFrontLeft1, wheelSpeedFrontLeft2, wheelSpeedFrontRight1, wheelSpeedRearRight2, wheelSpeedRearLeft1, wheelSpeedRearLeft2, wheelSpeedRearRight1, wheelSpeedRearRight2}; //
-            CAN.sendMsgBuf(0x4B0, 0, 8, wheelSpeedSignalData);
-            Serial.println("ABS Wheel Speed Signal Data Tx on ID 0x4B0 for PCM.");
-            if ( wheelSpeedFrontLeft2 | wheelSpeedRearRight2 | wheelSpeedRearLeft2 | wheelSpeedRearRight2 == 0xFE)
-            {
-                Serial.println("ABS Wheel Speed Signal INITIALIZATION IN PROGRESS.");                
-            } 
-            else if (wheelSpeedFrontLeft1 | wheelSpeedFrontLeft2 | wheelSpeedFrontRight1 | wheelSpeedRearRight2 | wheelSpeedRearLeft1 | wheelSpeedRearLeft2 | wheelSpeedRearRight1 | wheelSpeedRearRight2 == 0xFF)
-            {
-                Serial.println("ABS Wheel Speed Signal ERROR INVALID DATA.");
-            }
-            delay(100);   
-        }
         // Notes on Standalone PCM, disabling PATS for BA/BF via PCMTEC:
         // To run the BA/BF PCM standalone there are two items that must be set up. Firstly the PATS security system must be disabled.
         // First locate auF16527 (PATS Alternate Switch) and auF16595 (PATS Switch). From the factory you will have:
@@ -649,7 +721,7 @@ void loop()
         //  |    |   \ / __ \|  | \/|  | \// __ \_  |    |   \     \____/    Y    \  |    `   \  |/ __ \_/ /_/  >   |  (  <_> )___ \  |  | |  \  \___   |    `   \/ __ \|  |  / __ \_
         //  |______  /(____  /__|   |__|  (____  /  |____|    \______  /\____|__  / /_______  /__(____  /\___  /|___|  /\____/____  > |__| |__|\___  > /_______  (____  /__| (____  /
         //         \/      \/                  \/                    \/         \/          \/        \//_____/      \/           \/               \/          \/     \/          \/          
-        // PCM_DiagSig_Rx, Tx ID's 0x7DF, 0x7E0, 0x7E8
+        // PCM_DiagSig_Rx, Tx ID's 0x7DF, 0x7E0, 0x7E8 TCM 0x7E1, 0x7E9
         // Print on the serial monitor any diagnostic messsages that are recieved.
         if (canId == 0x7DF)            // OBDII Tester Transmit ID 
         {
@@ -701,10 +773,70 @@ void loop()
                 Serial.println("\t");
             }
         }
-        // //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    }
+    if(CAN_MSGAVAIL == CAN1.checkReceive())            // check if data coming
+    {
+    // ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        CAN1.readMsgBuf(&len, buf);    // read data,  len: data length, buf: data buf
+        Serial.println("CANbus: BMW Powertrain CAN:");
+        unsigned long canId2= CAN1.getCanId();      
+        // ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        // _______            ______________________       _____ __________  _________  __      __.__                  .__      _________                        .___   _____              ___________________     _____   
+        // \   _  \ ___  ___ /  |  \______   \   _  \     /  _  \\______   \/   _____/ /  \    /  \  |__   ____   ____ |  |    /   _____/_____   ____   ____   __| _/ _/ ____\___________  \______   \_   ___ \   /     \  
+        // /  /_\  \\  \/  //   |  ||    |  _/  /_\  \   /  /_\  \|    |  _/\_____  \  \   \/\/   /  |  \_/ __ \_/ __ \|  |    \_____  \\____ \_/ __ \_/ __ \ / __ |  \   __\/  _ \_  __ \  |     ___/    \  \/  /  \ /  \ 
+        // \  \_/   \>    </    ^   /    |   \  \_/   \ /    |    \    |   \/        \  \        /|   Y  \  ___/\  ___/|  |__  /        \  |_> >  ___/\  ___// /_/ |   |  | (  <_> )  | \/  |    |   \     \____/    Y    \
+        //  \_____  /__/\_ \____   ||______  /\_____  / \____|__  /______  /_______  /   \__/\  / |___|  /\___  >\___  >____/ /_______  /   __/ \___  >\___  >____ |   |__|  \____/|__|     |____|    \______  /\____|__  /
+        //        \/      \/    |__|       \/       \/          \/       \/        \/         \/       \/     \/     \/               \/|__|        \/     \/     \/                                         \/         \/ // 
+        // FALCON WHEEL SPEED SIGNAL:
+        // Antilock Brake Module   Wheel Speed Sensor  4B0 8   
+        // WheelSpeedFrontLeft Units:km/h   Offset:0;Multi:1;Div:100   0xFFFE=Initialization in progress   0xFFFF=Wheel Speed Faulted          
+        // WheelSpeedFrontLeft Units:km/h  Offset:0;Multi:1;Div:100  0xFFFE=Initialization in progress  0xFFFF=Wheel Speed Faulted         
+        // FrontRightWheelSpeed  Units:km/h  Offset:0;Multi:1;Div:100  0xFFFE=Initialization in progress  0xFFFF=Wheel Speed Faulted   
+        // FrontRightWheelSpeed    RearLeftWheelSpeed  RearLeftWheelSpeed  RightRearWheelSpeed RightRearWheelSpeed
+        // BMW WHEEL SPEED SIGNAL:
+        // CAN ID 0xCE Wheel rotating speed:
+        // ID: 0x0CE
+        // DLC: 8
+        // Tx method: cycle
+        // Cycle time: 20ms
+        // Signal  Start bit   Length  Order   Value type  Factor  Offset  Unit
+        // V_WHL_FLH   0   16  Intel   Signed  0.0625  0   km/h
+        // V_WHL_FRH   16  16  Intel   Signed  0.0625  0   km/h
+        // V_WHL_RLH   32  16  Intel   Signed  0.0625  0   km/h
+        // V_WHL_RRH   48  16  Intel   Signed  0.0625  0   km/h
+        // Message example:        // 
+        // 0xCE 8 00 00 00 00 00 00 00 00
+        // V_WHL_FLH: 0km/h
+        // V_WHL_FRH: 0km/h
+        // V_WHL_RLH: 0km/h
+        // V_WHL_RRH: 0km/h
+        // ASSUMING THAT VEHICLE SPEED SOURCE IS SET TO 'ABS via CAN' with PCMTEC, WE NEED TO PROVIDE THAT SIGNAL FOR THE BARRA PCM VIA THE CANBUS
+        // Recieve ABS individual wheel speed signals from BMW ABS module, and re-transmit on ID 0x4B0 for Barra PCM
+        if (canId2 == 0x0CE) // BMW WHEEL SPEED ID FROM ABS CAN1
+        {
+            int wheelSpeedFrontLeft1  = (int)buf[0]; // BMW DATA is * 0.0625
+            int wheelSpeedFrontLeft2  = (int)buf[1];
+            int wheelSpeedFrontRight1 = (int)buf[2];
+            int wheelSpeedFrontRight2 = (int)buf[3];
+            int wheelSpeedRearLeft1   = (int)buf[4];
+            int wheelSpeedRearLeft2   = (int)buf[5];
+            int wheelSpeedRearRight1  = (int)buf[6];
+            int wheelSpeedRearRight2  = (int)buf[7];
+            unsigned char wheelSpeedSignalData[8] = {wheelSpeedFrontLeft1, wheelSpeedFrontLeft2, wheelSpeedFrontRight1, wheelSpeedRearRight2, wheelSpeedRearLeft1, wheelSpeedRearLeft2, wheelSpeedRearRight1, wheelSpeedRearRight2}; //
+            CAN.sendMsgBuf(0x4B0, 0, 8, wheelSpeedSignalData);
+            Serial.println("ABS Wheel Speed Signal Data Tx on ID 0x4B0 for PCM.");
+            if ( wheelSpeedFrontLeft2 | wheelSpeedRearRight2 | wheelSpeedRearLeft2 | wheelSpeedRearRight2 == 0xFE)
+            {
+                Serial.println("ABS Wheel Speed Signal INITIALIZATION IN PROGRESS.");                
+            } 
+            else if (wheelSpeedFrontLeft1 | wheelSpeedFrontLeft2 | wheelSpeedFrontRight1 | wheelSpeedRearRight2 | wheelSpeedRearLeft1 | wheelSpeedRearLeft2 | wheelSpeedRearRight1 | wheelSpeedRearRight2 == 0xFF)
+            {
+                Serial.println("ABS Wheel Speed Signal ERROR INVALID DATA.");
+            }
+            //delay(100);   
+        }
     }
 }
-
 /*********************************************************************************************************
   END FILE
 *********************************************************************************************************/
