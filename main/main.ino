@@ -70,6 +70,13 @@
 // ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // const int SPI_CS_PIN = 9;               // CAN Bus Shield
 // const int SPI_CS_PIN = 17;              // CANBed V1
+
+// brakeStatus
+// throttlePosition
+// throttlePositionDesired
+// acceleratorPedalPosition
+// kickdownActive
+
 CRC8 crc8;
 const int SPI_CS_PIN                 = 3;                  // CANBed M0
 const int SPI_MCP2515_CS_PIN         = 10;                  // CANBed M0
