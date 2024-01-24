@@ -3,13 +3,11 @@
 
 <img align="right" src="https://user-images.githubusercontent.com/57064943/166143780-9685fc0f-eeac-4459-9320-abc607407b39.png" height="20%" width="35%"/>
 
-# Barra in a Beamer   <a href="https://testerpresent.com.au/"><img src="https://img.shields.io/badge/Tester Present -Specialist Automotive Solutions-red" /></a>
+# Barra in a Beamer   <a href="https://testerpresent.com.au/"><img src="https://img.shields.io/badge/Tester Present -Specialist Automotive Solutions-blue" /></a>
 
-<sup>
 
 Installing a Ford Falcon Barra engine into a 2009 BMW F01 7 Series 730D.   
-<br/>  
-
+<br/>
 
 <br/>
 <br/><br/>
