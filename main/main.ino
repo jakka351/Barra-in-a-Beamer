@@ -1,4 +1,4 @@
-// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+e// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // /////     __________________________________________________________________________________________________________________
 // /////
 // /////                                    __________                                    
@@ -58,7 +58,6 @@
 #include <mcp_can.h>
 #include <mcp_can_dfs.h>
 #include "CRC8.h"
-//#include "CRC8.cpp"
 // ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // ////                     .__      ___.   .__                 
 // //// ___  _______ _______|__|____ \_ |__ |  |   ____   ______
@@ -70,13 +69,6 @@
 // ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // const int SPI_CS_PIN = 9;               // CAN Bus Shield
 // const int SPI_CS_PIN = 17;              // CANBed V1
-
-// brakeStatus
-// throttlePosition
-// throttlePositionDesired
-// acceleratorPedalPosition
-// kickdownActive
-
 CRC8 crc8;
 const int SPI_CS_PIN                 = 3;                  // CANBed M0
 const int SPI_MCP2515_CS_PIN         = 10;                  // CANBed M0
@@ -110,12 +102,18 @@ uint8_t counter2FC                   = 0x0;
 uint8_t counter349                   = 0x0;
 uint8_t counter3A0                   = 0x0;
 uint8_t counter3BE                   = 0x0;
+uint8_t inFuelRange;
+uint8_t outFuelRange;
+uint8_t backlightBrightness;
+uint8_t gear;
+uint8_t driveMode;
 int V_VEH;                                      // Vehicle Speed 
 int CHKSM_V_V;                                  // checksum @ 0x1A0 Byte[7] 
 int Rpm;                                        // 
 int RPM_TEMP_DOM_1;                             // Rpm1 input 
 int RPM_TEMP_DOM_2;                             // Rpm2 input
 int actualGearPosition;
+int engineTemperature;
 int engineCoolantTemperature;
 int wheelSpeedFrontLeft1;
 int wheelSpeedFrontLeft2;
@@ -126,6 +124,7 @@ int wheelSpeedRearLeft2;
 int wheelSpeedRearRight1;
 int wheelSpeedRearRight2;
 int odoCount;                                   // 
+int fuelPercentage;
 float odoCountMulti;
 bool flagEngineOilPressureWarning;
 bool flagEngineOilPressureWarningFlashing;
@@ -143,6 +142,17 @@ bool flagAirConShedLoad;
 bool flagDtcLoggingHighSpeedCan;
 bool flagMilLampIlluminated;
 bool flagEngineCoolantOverTemperatureWarning;
+bool handbrake;
+bool highBeam;
+bool mainBeam;
+bool rearFogLight;
+bool frontFogLight;
+bool doorOpen;
+bool espLight;
+bool ignition;
+bool isCarMini;
+bool leftTurningIndicator;
+bool rightTurningIndicator;
 // ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // ////                __                
 // ////   ______ _____/  |_ __ ________  
@@ -190,24 +200,6 @@ void setup()
     //    delay(100);
     // ////////////////////////////////////////////////////////////////////////////
 }
-void send3FD() 
-{
-    mes[0] = crc8.get_crc8(mes, 5, 0x70, 1);
-    mes[1] = Cnt3FD;
-    mes[2] = 0x00;
-    mes[3] = 0x00;
-    mes[4] = 0x00;
-    CAN1.sendMsgBuf(0x3FD, 0, 5, mes);
-    Cnt3FD++;
-    if (Cnt3FD == 0xF) 
-    {
-        Cnt3FD = 0;
-    }
-    mes[0] = 0xFF;
-    mes[1] = 0;
-    CAN1.sendMsgBuf(0x202, 0, 2, mes);
-}
-
 // ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // ////  .__                        a
 // ////  |  |   ____   ____ ______  
@@ -347,15 +339,13 @@ void loop()
     unsigned char send3BEPre[2] = {0x3BE, counter3BE};
     checksum = crc8.get_crc8(send3BEPre, 2, 0x70, 1);
     unsigned char send3BE[8] = {checksum, counter3BE};
-    CAN.sendMsgBuf(0x3BE, 0, 2, send3BE);
-    Serial.println("[ SENT 0x3BE ]");
+    CAN1.sendMsgBuf(0x3BE, 0, 2, send3BE);
     counter3BE ++;
     if (counter3BE == 0xF)
     {
         counter3BE = 0x0;
-    }
-    
-    delay(100);
+    }   
+    //delay(100);
     // put your main code here, to run repeatedly:
     // ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     //                             .__                                   ___.                                                                              
@@ -401,22 +391,23 @@ void loop()
             if (tmpSpeed != V_VEH)
             {
                 V_VEH = (tmpSpeed * 0.1);    // From Barra PCM then calced to KM/H, then multiply KMH * 0.1 to correct for BMW cluster input
-                CHKSM_V_V = (V_VEH + 0x40);  // TBA
                 Serial.println("[V_VEH]Vehicle Speed km/h: ");
                 Serial.println(V_VEH);
                 //////////////////////////////////////
-                // CAN ID 0x1A0 Byte 0 - Vehicle Speed 
-                // V_VEH    0   12  Intel   Unsigned    0.1 0   km/h 
-                unsigned char dataSpdPre[8] = {0x1A0, counterDataSpd, 0, 0, 0, 0, 0, V_VEH};
+                // CAN ID 0x1A1 Vehicle Speed - ready to be tested on cluster 29/01/2024
+                // 
+                double bmwSpeed = V_VEH / 64.01;
+                uint16_t calculatedSpeed = (double)V_VEH * 64.01; // 
+                unsigned char dataSpdPre[5] = {0x1A1, counterDataSpd, lo8(calculatedSpeed), hi8(calculatedSpeed), V_VEH};
                 checksum = crc8.get_crc8(dataSpdPre, 8, 0x70, 1);
-                unsigned char dataSpd[8] = {checksum, counterDataSpd, 0, 0, 0, 0, 0, V_VEH};
-                CAN1.sendMsgBuf(0x1A0, 0, 8, dataSpd);  // Send data to cluster for speed
+                unsigned char dataSpd[5] = {checksum, 0xF0|counterDataSpd, lo8(calculatedSpeed), hi8(calculatedSpeed), V_VEH};
+                CAN1.sendMsgBuf(0x1A1, 0, 5, dataSpd); 
                 counterDataSpd ++;
                 if (counterDataSpd == 0xF)
                 {
                     counterDataSpd = 0x0;
                 }
-                Serial.println("Vehicle Speed data Tx.");
+                Serial.println("Vehicle Speed Data Tx.");
                 //delay(100);   
             }
             //////////////////////////////////////////////////////////////////
@@ -424,20 +415,22 @@ void loop()
             if (tmpRpm != Rpm)
             {
                 Rpm = tmpRpm;
-                RPM_TEMP_DOM_1 = Rpm;
-                RPM_TEMP_DOM_2 = Rpm;
+                //RPM_TEMP_DOM_1 = Rpm;
+                //RPM_TEMP_DOM_2 = Rpm; // need to convert these to rpmValue for CAN message
+                //int rpmValue =  map(rpm, 0, 6900, 0x00, 0x2B);
+                calculatedGear = actualGearPosition;
                 Serial.println("RPM: ");
                 Serial.println(Rpm);             
-                unsigned char dataRpmPre[8] = {0xF3, counterDataRpm, 0, 0, 0, 0, RPM_TEMP_DOM_1, RPM_TEMP_DOM_2};
+                unsigned char dataRpmPre[8] = {0xF3, counterDataRpm, Rpm, 0xC0, 0xF0, calculatedGear, 0xFF, 0xFF };
                 checksum = crc8.get_crc8(dataRpmPre, 8, 0x70, 1);
-                unsigned char dataRpm[8] = {checksum, counterDataRpm, 0, 0, 0, 0, RPM_TEMP_DOM_1, RPM_TEMP_DOM_2};
-                CAN1.sendMsgBuf(0x0F3, 0, 8, dataRpm); // send data to cluster for rpm
+                unsigned char dataRpm[8] = {checksum, counterDataRpm, rpmValue, 0xC0, 0xF0, calculatedGear, 0xFF, 0xFF };
+                CAN1.sendMsgBuf(0x0F3, 0, 8, dataRpm); 
                 counterDataRpm ++;
                 if (counterDataRpm == 0xF)
                 {
                     counterDataRpm = 0x0;
                 }
-                Serial.println("Engine RPM data Tx.");
+                Serial.println("Engine RPM Data & Gear Position Data Tx.");
                 //delay(100);
             }
             //////////////////////////////////////////////////////////////////
@@ -456,7 +449,7 @@ void loop()
         // CAN ID 0x230, Byte 0 is Transmission Gear Position
         // Data: 0=Blank  1=Forward+Drive_1  2=Fordwar_Drive_2  3=Forward_Drive_3  4=Forward_Drive_4  5=Forward_Drive_5  6=Fprward_Drive_D  10=Reverse_Drive_R  11=reserved  16=Forward_Drive_6  
         // 17=Forward_Drive_7  18=Forward_Drive_8  19=Forward_Drive_9  F0=Park_P  F1=Neutral_N  FF=Inval
-        if (canId == 0x230)
+        if (canId == 0x230) // Ready for testing 29/01/2024
         {
             int actualGearPosition = (int)buf[0];
             switch (actualGearPosition)
@@ -510,16 +503,17 @@ void loop()
                     Serial.println("Trans Gear: Invalid Data");
                     break;
             }
-            unsigned char sendActualGearPositionPre[8] = {0xABC, counterActualGearPos, actualGearPosition, 0, 0, 0, 0, 0};
-            checksum = crc8.get_crc8(sendActualGearPositionPre, 8, 0x70, 1);    
-            unsigned char sendActualGearPosition[8] = {checksum, counterActualGearPos, actualGearPosition, 0, 0, 0, 0, 0}; //
-            CAN1.sendMsgBuf(0xABC, 0, 8, sendActualGearPosition);
-            counterActualGearPos ++;
-            if (counterActualGearPos == 0xF)
-            {
-                counterActualGearPos = 0x0;
-            }
-            Serial.println("Trans Gear Position data Tx.");
+            // getting rid of this message send as gear position is sent on the same CAN ID as RPM (AS ABOVE)
+            //unsigned char sendActualGearPositionPre[8] = {0xABC, counterActualGearPos, actualGearPosition, 0, 0, 0, 0, 0};
+            //checksum = crc8.get_crc8(sendActualGearPositionPre, 8, 0x70, 1);    
+            //unsigned char sendActualGearPosition[8] = {checksum, counterActualGearPos, actualGearPosition, 0, 0, 0, 0, 0}; //
+            //CAN1.sendMsgBuf(0xABC, 0, 8, sendActualGearPosition);
+            //counterActualGearPos ++;
+            //if (counterActualGearPos == 0xF)
+            //{
+            //    counterActualGearPos = 0x0;
+            //}
+            //Serial.println("Trans Gear Position data Tx.");
             //delay(100);
         }
         // //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
