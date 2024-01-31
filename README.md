@@ -100,6 +100,11 @@ Each CAN Message that is sent out onto the PT-CAN contains both a checksum and a
 Here we are emulating the BMW checksum and counter byte on socketcan virtual interface. This has now been implemented into the Arduino code using a CRC8 checksum calculation.
 ![image](https://github.com/jakka351/Barra-in-a-Beamer/assets/57064943/1091dede-52fa-4216-9a85-5d3a112f7012)
 
+## Driving the Kombi (Instrument Cluster)
+
+Wiring the Kombi up to 12 Volts power, Ground and PT-CAN Hi & Low.
+![IMG_20240131_172723367_HDR (1)](https://github.com/jakka351/Barra-in-a-Beamer/assets/57064943/44a7b4fb-30d3-4945-bc65-d5fe380b947b)
+
 
 ## Wiring Diagrams
   
