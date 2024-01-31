@@ -1,4 +1,4 @@
-e// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // /////     __________________________________________________________________________________________________________________
 // /////
 // /////                                    __________                                    
@@ -69,6 +69,8 @@ e// ////////////////////////////////////////////////////////////////////////////
 // ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // const int SPI_CS_PIN = 9;               // CAN Bus Shield
 // const int SPI_CS_PIN = 17;              // CANBed V1
+#define lo8(x) (uint8_t)((x) & 0xFF)
+#define hi8(x) (uint8_t)(((x)>>8) & 0xFF)
 CRC8 crc8;
 const int SPI_CS_PIN                 = 3;                  // CANBed M0
 const int SPI_MCP2515_CS_PIN         = 10;                  // CANBed M0
@@ -80,7 +82,6 @@ char msgString[128];                            // Array to store serial string
 unsigned char len = 0;                          //
 unsigned char rxBuf[8];                         //
 uint8_t checksum;             
-uint8_t Cnt3FD                       = 0x0;
 uint8_t counterDataRpm               = 0x0; // byte [1] counter, counts from 0x10-0x1E over and over for RPM DATA 
 uint8_t counterDataSpd               = 0x0; // byte [1] counter, counts from 0x10-0x1E over and over for RPM DATA
 uint8_t counterDataEct               = 0x0; // ENGINE COOLANT TEMP COUNTER BYTE 
@@ -97,7 +98,7 @@ uint8_t counter0D9                   = 0x0;
 uint8_t counter0DC                   = 0x0;
 //uint8_t counter0F3                   = 0x0;
 uint8_t counter281                   = 0x0;
-uint8_t counter2C4                   = 0x0;
+//uint8_t counter2C4                   = 0x0;
 uint8_t counter2FC                   = 0x0;
 uint8_t counter349                   = 0x0;
 uint8_t counter3A0                   = 0x0;
@@ -108,10 +109,9 @@ uint8_t backlightBrightness;
 uint8_t gear;
 uint8_t driveMode;
 int V_VEH;                                      // Vehicle Speed 
-int CHKSM_V_V;                                  // checksum @ 0x1A0 Byte[7] 
 int Rpm;                                        // 
-int RPM_TEMP_DOM_1;                             // Rpm1 input 
-int RPM_TEMP_DOM_2;                             // Rpm2 input
+//int RPM_TEMP_DOM_1;                             // Rpm1 input 
+//int RPM_TEMP_DOM_2;                             // Rpm2 input
 int actualGearPosition;
 int engineTemperature;
 int engineCoolantTemperature;
@@ -187,17 +187,18 @@ void setup()
     //  /_______  (____  /____  >___|  / /_______  / \/\_/  \___  >\___  >   __/ 
     //          \/     \/     \/     \/          \/             \/     \/|__|    
     // Looks cool, and also tests everything upon power up. 
-    // add in fuel gauge and coolant gauge?
-    //    unsigned char dashSweepSpeedo[8] = {0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-    //    unsigned char dashSweepTacho[8] = {0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-    //    //unsigned char dashSweepCoolantTemp[8] = {0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-    //    //unsigned char dashSweepFuelGauge[8] = {0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-    //    CAN.sendMsgBuf(0x1A0, 0, 8, dashSweepSpeedo);  
-    //    CAN.sendMsgBuf(0x1B0, 0, 8, dashSweepTacho);  //tacho
-    //    //CAN.sendMsgBuf(0x1A0, 0, 8, dashSweepCoolantTemp);  
-    //    //CAN.sendMsgBuf(0x1B0, 0, 8, dashSweepFuelGauge);  //tacho
-    //    Serial.println("[ Start Up Function Test // Dash Sweep data Tx. ]");
-    //    delay(100);
+    //V_VEH = 260;
+    //uint16_t calculatedSpeed = (double)V_VEH * 64.01;                                                      //             
+    //unsigned char dataSpdDashPre[] = {0xF0|counterDataSpd, lo8(calculatedSpeed), hi8(calculatedSpeed), V_VEH}; //
+    //unsigned char dataSpdDash[5] = {crc8.get_crc8(dataSpdDashPre, 4, 0xA9, 1), dataSpdDashPre[0], dataSpdDashPre[1], dataSpdDashPre[2], dataSpdDashPre[3]};     // checksum byte was set to 0x70 29/01/2024
+    //CAN1.sendMsgBuf(0x1A1, 0, 5, dataSpdDash);                                                                 // 
+    //counterDataSpd ++;
+    //if (counterDataSpd >= 0xE) { counterDataSpd = 0; }
+    //unsigned char dataRpmDashPre[] = {counterDataRpm, Rpm, 0xC0, 0xF0, 0x00, 0xFF, 0xFF };
+    //unsigned char dataRpmDash[8] = {crc8.get_crc8(dataRpmDashPre, 7, 0x7A, 1), dataRpmDashPre[0], dataRpmDashPre[1], dataRpmDashPre[2], dataRpmDashPre[3], dataRpmDashPre[4], dataRpmDashPre[5], dataRpmDashPre[6]};
+    //CAN1.sendMsgBuf(0x0F3, 0, 8, dataRpm); 
+    //counterDataRpm ++;
+    //if (counterDataRpm >= 0xE) { counterDataRpm = 0; }
     // ////////////////////////////////////////////////////////////////////////////
 }
 // ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -225,126 +226,87 @@ void loop()
     //    0x349
     //    0x3A0
     //    0x3BE
-    unsigned char send08FPre[8] = {0x1A0, counter08F, 0, 0, 0, 0, 0, 0};
-    checksum = crc8.get_crc8(send08FPre, 8, 0x70, 1);
-    unsigned char send08F[8] = {checksum, counter08F, 0, 0, 0, 0, 0, 0};
+    unsigned char send08FPre[] = {counter08F, 0, 0, 0, 0, 0, 0};
+    unsigned char send08F[8] = {crc8.get_crc8(send08FPre, 7, 0x70, 1), send08FPre[0], send08FPre[1], send08FPre[2], send08FPre[3], send08FPre[4], send08FPre[5], send08FPre[6]};
     CAN.sendMsgBuf(0x08F, 0, 8, send08F);
     counter08F ++;
-    if (counter08F == 0xF)
-    {
-        counter08F = 0x0;
-    }
-
-    unsigned char send0A5Pre[8] = {0x1A0, counter0A5, 0, 0, 0, 0, 0, 0};
-    checksum = crc8.get_crc8(send0A5Pre, 8, 0x70, 1);
-    unsigned char send0A5[8] = {checksum, counter0A5, 0, 0, 0, 0, 0, 0};
+    if (counter08F >= 0xE) { counter08F = 0; }
+    
+    unsigned char send0A5Pre[] = {counter0A5, 0, 0, 0, 0, 0, 0};
+    unsigned char send0A5[8] = {crc8.get_crc8(send0A5Pre, 7, 0x70, 1), send0A5Pre[0], send0A5Pre[1], send0A5Pre[2], send0A5Pre[3], send0A5Pre[4], send0A5Pre[5], send0A5Pre[6]};
     CAN.sendMsgBuf(0x0A5, 0, 8, send0A5);
     counter0A5 ++;
-    if (counter0A5 == 0xF)
-    {
-        counter0A5 = 0x0;
-    }
-    
-    unsigned char send0A6Pre[8] = {0x0A6, counter0A6, 0, 0, 0, 0, 0, 0};
-    checksum = crc8.get_crc8(send0A6Pre, 8, 0x70, 1);
-    unsigned char send0A6[8] = {checksum, counter0A6, 0, 0, 0, 0, 0, 0};
+    if (counter0A5 >= 0xE) { counter0A5 = 0; }
+
+    unsigned char send0A6Pre[] = {counter0A6, 0, 0, 0, 0, 0, 0};
+    unsigned char send0A6[8] = {crc8.get_crc8(send0A6Pre, 7, 0x70, 1), send0A6Pre[0], send0A6Pre[1], send0A6Pre[2], send0A6Pre[3], send0A6Pre[4], send0A6Pre[5], send0A6Pre[6]};
     CAN.sendMsgBuf(0x0A6, 0, 8, send0A6);
     counter0A6 ++;
-    if (counter0A6 == 0xF)
-    {
-        counter0A7 = 0x0;
-    }
+    if (counter0A6 >= 0xE) { counter0A6 = 0; }
     
-    unsigned char send0A7Pre[8] = {0x0A7, counter0A7, 0, 0, 0, 0, 0, 0};
-    checksum = crc8.get_crc8(send0A7Pre, 8, 0x70, 1);
-    unsigned char send0A7[8] = {checksum, counter0A7, 0, 0, 0, 0, 0, 0};
+    unsigned char send0A7Pre[] = {counter0A7, 0, 0, 0, 0, 0};
+    unsigned char send0A7[8] = {crc8.get_crc8(send0A7Pre, 6, 0x70, 1), send0A7Pre[0], send0A7Pre[1], send0A7Pre[2], send0A7Pre[3], send0A7Pre[4], send0A7Pre[5]};
     CAN1.sendMsgBuf(0x0A7, 0, 7, send0A7);
     counter0A7 ++;
-    if (counter0A7 == 0xF)
-    {
-        counter0A7 = 0x0;
-    }
+    if (counter0A7 >= 0xE) { counter0A7 = 0; }
     
-
     unsigned char send0D9Pre[8] = {0x0D9, counter0D9, 0, 0, 0, 0, 0, 0};
     checksum = crc8.get_crc8(send0D9Pre, 8, 0x70, 1);
     unsigned char send0D9[8] = {checksum, counter0D9, 0, 0, 0, 0, 0, 0};
     CAN1.sendMsgBuf(0x0D9, 0, 8, send0D9);
     counter0D9 ++;
-    if (counter0D9 == 0xF)
-    {
-        counter0D9 = 0x0;
-    }
-    
+    if (counter0D9 >= 0xE) { counter0D9 = 0; }
+
     unsigned char send0DCPre[6] = {0x0DC, counter0DC, 0, 0, 0, 0};
     checksum = crc8.get_crc8(send0DCPre, 6, 0x70, 1); /// may need editing
     unsigned char send0DC[6] = {checksum, counter0DC, 0, 0, 0, 0};
     CAN1.sendMsgBuf(0x0DC, 0, 6, send0DC);
     counter0DC ++;
-    if (counter0DC == 0xF)
-    {
-        counter0DC = 0x0;
-    }
+    if (counter0DC >= 0xE) { counter0DC = 0; }
     
     unsigned char send281Pre[2] = {0x281, counter281};
     checksum = crc8.get_crc8(send281Pre, 2, 0x70, 1); // may need editing
     unsigned char send281[2] = {checksum, counter0D9};
     CAN1.sendMsgBuf(0x281, 0, 2, send281);
     counter281 ++;
-    if (counter281 == 0xF)
-    {
-        counter281 = 0x0;
-    }
+    if (counter281 >= 0xE) { counter281 = 0; }
     
-    unsigned char send2C4Pre[8] = {0x2C4, counter2C4, 0, 0, 0, 0, 0, 0};
-    checksum = crc8.get_crc8(send2C4Pre, 8, 0x70, 1);
-    unsigned char send2C4[8] = {checksum, counter2C4, 0, 0, 0, 0, 0, 0};
-    CAN1.sendMsgBuf(0x2C4, 0, 8, send2C4);
-    counter2C4 ++;
-    if (counter2C4 == 0xF)
-    {
-        counter2C4 = 0x0;
-    }
+    // Engine coolant temperature data - taken care of below in ECT CAN Message converter
+    // unsigned char send2C4Pre[8] = {0x2C4, counter2C4, 0, 0, 0, 0, 0, 0};
+    // checksum = crc8.get_crc8(send2C4Pre, 8, 0x70, 1);
+    // unsigned char send2C4[8] = {checksum, counter2C4, 0, 0, 0, 0, 0, 0};
+    // CAN1.sendMsgBuf(0x2C4, 0, 8, send2C4);
+    // counter2C4 ++;
+    // if (counter2C4 >= 0xE) { counter2C4 = 0; }
     
     unsigned char send2FCPre[7] = {0x2FC, counter2FC, 0, 0, 0, 0, 0};
     checksum = crc8.get_crc8(send2FCPre, 7, 0x70, 1);
     unsigned char send2FC[7] = {checksum, counter2FC, 0, 0, 0, 0, 0};
     CAN1.sendMsgBuf(0x2FC, 0, 7, send2FC);
     counter2FC ++;
-    if (counter2FC == 0xF)
-    {
-        counter2FC = 0x0;
-    }
+    if (counter2FC >= 0xE) { counter2FC = 0; }
     
     unsigned char send349Pre[5] = {0x349, counter349, 0, 0, 0};
     checksum = crc8.get_crc8(send349Pre, 8, 0x70, 1);
     unsigned char send349[5] = {checksum, counter349, 0, 0, 0};
     CAN1.sendMsgBuf(0x349, 0, 5, send349);
     counter349 ++;
-    if (counter349 == 0xF)
-    {
-        counter349 = 0x0;
-    }
+    if (counter349 >= 0xE) { counter349 = 0; }
     
     unsigned char send3A0Pre[8] = {0x3A0, counter3A0, 0, 0, 0, 0, 0, 0};
     checksum = crc8.get_crc8(send3A0Pre, 8, 0x70, 1);
     unsigned char send3A0[8] = {checksum, counter3A0, 0, 0, 0, 0, 0, 0};
     CAN1.sendMsgBuf(0x3A0, 0, 8, send3A0);
     counter3A0 ++;
-    if (counter3A0 == 0xF)
-    {
-        counter3A0 = 0x0;
-    }
+    if (counter3A0 >= 0xE) { counter3A0 = 0; }
     
-    unsigned char send3BEPre[2] = {0x3BE, counter3BE};
-    checksum = crc8.get_crc8(send3BEPre, 2, 0x70, 1);
-    unsigned char send3BE[8] = {checksum, counter3BE};
+    unsigned char send3BEPre[] = {counter3BE};
+    checksum = crc8.get_crc8(send3BEPre, 1, 0x70, 1);
+    unsigned char send3BE[8] = {checksum, send3BEPre[0]};
     CAN1.sendMsgBuf(0x3BE, 0, 2, send3BE);
     counter3BE ++;
-    if (counter3BE == 0xF)
-    {
-        counter3BE = 0x0;
-    }   
+    if (counter3BE >= 0xE) { counter3BE = 0; }
+
     //delay(100);
     // put your main code here, to run repeatedly:
     // ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -362,81 +324,6 @@ void loop()
         CAN.readMsgBuf(&len, buf);    // read data,  len: data length, buf: data buf
         Serial.println("CANbus: Barra HighSpeed CAN:");
         unsigned long canId = CAN.getCanId();        
-        // ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        // _______         ________________________  __________                            __                .__         _________                __                .__       _____             .___    .__          
-        // \   _  \ ___  __\_____  \   _  \______  \ \______   \______  _  __ ____________/  |_____________  |__| ____   \_   ___ \  ____   _____/  |________  ____ |  |     /     \   ____   __| _/_ __|  |   ____  
-        // /  /_\  \\  \/  //  ____/  /_\  \  /    /  |     ___/  _ \ \/ \/ // __ \_  __ \   __\_  __ \__  \ |  |/    \  /    \  \/ /  _ \ /    \   __\_  __ \/  _ \|  |    /  \ /  \ /  _ \ / __ |  |  \  | _/ __ \ 
-        // \  \_/   \>    </       \  \_/   \/    /   |    |  (  <_> )     /\  ___/|  | \/|  |  |  | \// __ \|  |   |  \ \     \___(  <_> )   |  \  |  |  | \(  <_> )  |__ /    Y    (  <_> ) /_/ |  |  /  |_\  ___/ 
-        //  \_____  /__/\_ \_______ \_____  /____/    |____|   \____/ \/\_/  \___  >__|   |__|  |__|  (____  /__|___|  /  \______  /\____/|___|  /__|  |__|   \____/|____/ \____|__  /\____/\____ |____/|____/\___  >
-        //        \/      \/       \/     \/                                     \/                        \/        \/          \/            \/                                  \/            \/               \/ 
-        //   _________                        .___   ____    __________                  __________                _____  .__        
-        //  /   _____/_____   ____   ____   __| _/  /  _ \   \______   \ _______  _______\______   \ ___________  /     \ |__| ____  
-        //  \_____  \\____ \_/ __ \_/ __ \ / __ |   >  _ </\  |       _// __ \  \/ /  ___/|     ___// __ \_  __ \/  \ /  \|  |/    \ 
-        //  /        \  |_> >  ___/\  ___// /_/ |  /  <_\ \/  |    |   \  ___/\   /\___ \ |    |   \  ___/|  | \/    Y    \  |   |  \
-        // /_______  /   __/ \___  >\___  >____ |  \_____\ \  |____|_  /\___  >\_//____  >|____|    \___  >__|  \____|__  /__|___|  /
-        //         \/|__|        \/     \/     \/         \/         \/     \/         \/               \/              \/        \/           
-        // powertrainControlModule code notesL
-        // CAN ID 0x207 Data Bytes:  [0]EngineRPM [1]EngineRPM [2]EngineSpeedRateOfChange [3]EngineSpeedRateOfChange [4]VehicleSpeed  [5]VehicleSpeed  [6]ThrottlePositionManifold  [7]ThrottlePositionRateOfChange
-        // Code for Vehicle Speed and Engine RPM recieved from Barra PCM, then transmitted out to BMW Kombi for speed and tacho display on cluster.
-        // Vehicle Speedo readout for BMW Kombi likely comes from ABS
-        if (canId == 0x207) 
-        {
-            //////////////////////////////////////////////////////////////////
-            int Valx0 = (int)buf[0]; // ENGINE RPM
-            int Valx1 = (int)buf[1]; // ENGINE RPM
-            int Valx4 = (int)buf[4]; // VEHICLE SPEED
-            int Valx5 = (int)buf[5]; // VEHICLE SPEED
-            //////////////////////////////////////////////////////////////////
-            float tmpSpeed = (Valx4 + (Valx5 / 255)) * 2;
-            if (tmpSpeed != V_VEH)
-            {
-                V_VEH = (tmpSpeed * 0.1);    // From Barra PCM then calced to KM/H, then multiply KMH * 0.1 to correct for BMW cluster input
-                Serial.println("[V_VEH]Vehicle Speed km/h: ");
-                Serial.println(V_VEH);
-                //////////////////////////////////////
-                // CAN ID 0x1A1 Vehicle Speed - ready to be tested on cluster 29/01/2024
-                // 
-                double bmwSpeed = V_VEH / 64.01;
-                uint16_t calculatedSpeed = (double)V_VEH * 64.01; // 
-                unsigned char dataSpdPre[5] = {0x1A1, counterDataSpd, lo8(calculatedSpeed), hi8(calculatedSpeed), V_VEH};
-                checksum = crc8.get_crc8(dataSpdPre, 8, 0x70, 1);
-                unsigned char dataSpd[5] = {checksum, 0xF0|counterDataSpd, lo8(calculatedSpeed), hi8(calculatedSpeed), V_VEH};
-                CAN1.sendMsgBuf(0x1A1, 0, 5, dataSpd); 
-                counterDataSpd ++;
-                if (counterDataSpd == 0xF)
-                {
-                    counterDataSpd = 0x0;
-                }
-                Serial.println("Vehicle Speed Data Tx.");
-                //delay(100);   
-            }
-            //////////////////////////////////////////////////////////////////
-            float tmpRpm = (Valx0 + (Valx1 / 255)) * 2;
-            if (tmpRpm != Rpm)
-            {
-                Rpm = tmpRpm;
-                //RPM_TEMP_DOM_1 = Rpm;
-                //RPM_TEMP_DOM_2 = Rpm; // need to convert these to rpmValue for CAN message
-                //int rpmValue =  map(rpm, 0, 6900, 0x00, 0x2B);
-                calculatedGear = actualGearPosition;
-                Serial.println("RPM: ");
-                Serial.println(Rpm);             
-                unsigned char dataRpmPre[8] = {0xF3, counterDataRpm, Rpm, 0xC0, 0xF0, calculatedGear, 0xFF, 0xFF };
-                checksum = crc8.get_crc8(dataRpmPre, 8, 0x70, 1);
-                unsigned char dataRpm[8] = {checksum, counterDataRpm, rpmValue, 0xC0, 0xF0, calculatedGear, 0xFF, 0xFF };
-                CAN1.sendMsgBuf(0x0F3, 0, 8, dataRpm); 
-                counterDataRpm ++;
-                if (counterDataRpm == 0xF)
-                {
-                    counterDataRpm = 0x0;
-                }
-                Serial.println("Engine RPM Data & Gear Position Data Tx.");
-                //delay(100);
-            }
-            //////////////////////////////////////////////////////////////////
-        }
-        // ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        
         // //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         // _______         ________  ________ _______    ___________                              _____          __               .__    ________                     
         // \   _  \ ___  __\_____  \ \_____  \\   _  \   \__    ___/___________    ____   ______ /  _  \   _____/  |_ __ _______  |  |  /  _____/  ____ _____ _______ 
@@ -517,6 +404,72 @@ void loop()
             //delay(100);
         }
         // //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+        // ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        // _______         ________________________  __________                            __                .__         _________                __                .__       _____             .___    .__          
+        // \   _  \ ___  __\_____  \   _  \______  \ \______   \______  _  __ ____________/  |_____________  |__| ____   \_   ___ \  ____   _____/  |________  ____ |  |     /     \   ____   __| _/_ __|  |   ____  
+        // /  /_\  \\  \/  //  ____/  /_\  \  /    /  |     ___/  _ \ \/ \/ // __ \_  __ \   __\_  __ \__  \ |  |/    \  /    \  \/ /  _ \ /    \   __\_  __ \/  _ \|  |    /  \ /  \ /  _ \ / __ |  |  \  | _/ __ \ 
+        // \  \_/   \>    </       \  \_/   \/    /   |    |  (  <_> )     /\  ___/|  | \/|  |  |  | \// __ \|  |   |  \ \     \___(  <_> )   |  \  |  |  | \(  <_> )  |__ /    Y    (  <_> ) /_/ |  |  /  |_\  ___/ 
+        //  \_____  /__/\_ \_______ \_____  /____/    |____|   \____/ \/\_/  \___  >__|   |__|  |__|  (____  /__|___|  /  \______  /\____/|___|  /__|  |__|   \____/|____/ \____|__  /\____/\____ |____/|____/\___  >
+        //        \/      \/       \/     \/                                     \/                        \/        \/          \/            \/                                  \/            \/               \/ 
+        //   _________                        .___   ____    __________                  __________                _____  .__        
+        //  /   _____/_____   ____   ____   __| _/  /  _ \   \______   \ _______  _______\______   \ ___________  /     \ |__| ____  
+        //  \_____  \\____ \_/ __ \_/ __ \ / __ |   >  _ </\  |       _// __ \  \/ /  ___/|     ___// __ \_  __ \/  \ /  \|  |/    \ 
+        //  /        \  |_> >  ___/\  ___// /_/ |  /  <_\ \/  |    |   \  ___/\   /\___ \ |    |   \  ___/|  | \/    Y    \  |   |  \
+        // /_______  /   __/ \___  >\___  >____ |  \_____\ \  |____|_  /\___  >\_//____  >|____|    \___  >__|  \____|__  /__|___|  /
+        //         \/|__|        \/     \/     \/         \/         \/     \/         \/               \/              \/        \/           
+        // powertrainControlModule code notesL
+        // CAN ID 0x207 Data Bytes:  [0]EngineRPM [1]EngineRPM [2]EngineSpeedRateOfChange [3]EngineSpeedRateOfChange [4]VehicleSpeed  [5]VehicleSpeed  [6]ThrottlePositionManifold  [7]ThrottlePositionRateOfChange
+        // Code for Vehicle Speed and Engine RPM recieved from Barra PCM, then transmitted out to BMW Kombi for speed and tacho display on cluster.
+        // Vehicle Speedo readout for BMW Kombi likely comes from ABS
+        if (canId == 0x207) 
+        {
+            //////////////////////////////////////////////////////////////////
+            int Valx0 = (int)buf[0]; // ENGINE RPM
+            int Valx1 = (int)buf[1]; // ENGINE RPM
+            int Valx4 = (int)buf[4]; // VEHICLE SPEED
+            int Valx5 = (int)buf[5]; // VEHICLE SPEED
+            //////////////////////////////////////////////////////////////////
+            float tmpSpeed = (Valx4 + (Valx5 / 255)) * 2;
+            if (tmpSpeed != V_VEH)
+            {
+                V_VEH = (tmpSpeed * 0.1);    // From Barra PCM then calced to KM/H, then multiply KMH * 0.1 to correct for BMW cluster input
+                Serial.println("[V_VEH]Vehicle Speed km/h: ");
+                Serial.println(V_VEH);
+                //////////////////////////////////////
+                // CAN ID 0x1A1 Vehicle Speed - ready to be tested on cluster 29/01/2024
+                // 
+                uint16_t calculatedSpeed = (double)V_VEH * 64.01;                                                      // 
+                unsigned char dataSpdPre[] = {0xF0|counterDataSpd, lo8(calculatedSpeed), hi8(calculatedSpeed), V_VEH}; //
+                unsigned char dataSpd[5] = {crc8.get_crc8(dataSpdPre, 4, 0xA9, 1), dataSpdPre[0], dataSpdPre[1], dataSpdPre[2], dataSpdPre[3]};     // checksum byte was set to 0x70 29/01/2024
+                CAN1.sendMsgBuf(0x1A1, 0, 5, dataSpd);                                                                 // 
+                counterDataSpd ++;
+                if (counterDataSpd >= 0xE) { counterDataSpd = 0; }
+                Serial.println("Vehicle Speed Data Tx.");
+                //delay(100);   
+            }
+            //////////////////////////////////////////////////////////////////
+            float tmpRpm = (Valx0 + (Valx1 / 255)) * 2;
+            if (tmpRpm != Rpm)
+            {
+                Rpm = tmpRpm;
+                //RPM_TEMP_DOM_1 = Rpm;
+                //RPM_TEMP_DOM_2 = Rpm; // need to convert these to rpmValue for CAN message
+                //int rpmValue =  map(rpm, 0, 6900, 0x00, 0x2B);
+                Serial.println("RPM: ");
+                Serial.println(Rpm);             
+                unsigned char dataRpmPre[] = {counterDataRpm, Rpm, 0xC0, 0xF0, actualGearPosition, 0xFF, 0xFF };
+                unsigned char dataRpm[8] = {crc8.get_crc8(dataRpmPre, 7, 0x7A, 1), dataRpmPre[0], dataRpmPre[1], dataRpmPre[2], dataRpmPre[3], dataRpmPre[4], dataRpmPre[5], dataRpmPre[6]};
+                CAN1.sendMsgBuf(0x0F3, 0, 8, dataRpm); 
+                counterDataRpm ++;
+                if (counterDataRpm >= 0xE) { counterDataRpm = 0; }
+                Serial.println("Engine RPM Data & Gear Position Data Tx.");
+                //delay(100);
+            }
+            //////////////////////////////////////////////////////////////////
+        }
+        // ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        
       
         // //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         //  _______            _____ _________________       ________       .___                     __                 _________                      __   
@@ -525,12 +478,30 @@ void loop()
         //  \  \_/   \>    </    ^   /       \  /    /       /    |    \/ /_/ (  <_> )  Y Y  \  ___/|  | \  ___/|  | \/ \     \___(  <_> )  |  /   |  \  |  
         //   \_____  /__/\_ \____   |\_______ \/____/        \_______  /\____ |\____/|__|_|  /\___  >__|  \___  >__|     \______  /\____/|____/|___|  /__|  
         //         \/      \/    |__|        \/                      \/      \/            \/     \/          \/                \/                  \/            
-        // odometerCount code notes
-        // BARRA CAN ID: 0x427 Byte [4] Odometer Count Byte [7] Engine Speed Count
-        // Unit:km  Offset:0,Mult:0.000201167, Div:1  FF=Invalid
-        // ODOMETER Count output from Barra PCM, may be unneccesary as BMW Kombi does odometer from speed source?
         if (canId == 0x427) 
         {
+            // ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+            //    ___________              .__                _________               .__                 __    ___________                                        __                        
+            //    \_   _____/ ____    ____ |__| ____   ____   \_   ___ \  ____   ____ |  | _____    _____/  |_  \__    ___/___   _____ ______   ________________ _/  |_ __ _________   ____  
+            //     |    __)_ /    \  / ___\|  |/    \_/ __ \  /    \  \/ /  _ \ /  _ \|  | \__  \  /    \   __\   |    |_/ __ \ /     \\____ \_/ __ \_  __ \__  \\   __\  |  \_  __ \_/ __ \ 
+            //     |        \   |  \/ /_/  >  |   |  \  ___/  \     \___(  <_> |  <_> )  |__/ __ \|   |  \  |     |    |\  ___/|  Y Y  \  |_> >  ___/|  | \// __ \|  | |  |  /|  | \/\  ___/ 
+            //    /_______  /___|  /\___  /|__|___|  /\___  >  \______  /\____/ \____/|____(____  /___|  /__|     |____| \___  >__|_|  /   __/ \___  >__|  (____  /__| |____/ |__|    \___  >
+            //            \/     \//_____/         \/     \/          \/                        \/     \/                    \/      \/|__|        \/           \/                        \/ 
+            //
+            // ID 0x427 byte 0 Engine Coolant Temperature
+            // ECT received from Barra PCM and then transmitted to Kombi for display on cluster
+            int engineCoolantTemperature = ((int)buf[0] - 40);
+            unsigned char sendEngineCoolantTemperaturePre[] = {counterDataEct, engineCoolantTemperature, 0xC8, 0xC8, 0xC8, 0xFE, 0xFE};
+            unsigned char sendEngineCoolantTemperature[8] = {crc8.get_crc8(sendEngineCoolantTemperaturePre, 7, 0xB2, 1), sendEngineCoolantTemperaturePre[0], sendEngineCoolantTemperaturePre[1], sendEngineCoolantTemperaturePre[2], sendEngineCoolantTemperaturePre[3], sendEngineCoolantTemperaturePre[4], sendEngineCoolantTemperaturePre[5], sendEngineCoolantTemperaturePre[6]}; //
+            CAN1.sendMsgBuf(0x2C4, 0, 8, sendEngineCoolantTemperature);
+            counterDataEct ++;
+            if (counterDataEct >= 0xE) { counterDataEct = 0; }
+            Serial.println("Engine Coolant Temperature Tx data.");
+            // ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+            // odometerCount code notes
+            // BARRA CAN ID: 0x427 Byte [4] Odometer Count Byte [7] Engine Speed Count
+            // Unit:km  Offset:0,Mult:0.000201167, Div:1  FF=Invalid
+            // ODOMETER Count output from Barra PCM, may be unneccesary as BMW Kombi does odometer from speed source?
             int odoCount = (int)buf[4];
             float odoCountMulti = (odoCount * 0.000201167);
             switch(odoCount)
@@ -552,49 +523,6 @@ void loop()
             } 
             // //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       
-            // ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-            //    ___________              .__                _________               .__                 __    ___________                                        __                        
-            //    \_   _____/ ____    ____ |__| ____   ____   \_   ___ \  ____   ____ |  | _____    _____/  |_  \__    ___/___   _____ ______   ________________ _/  |_ __ _________   ____  
-            //     |    __)_ /    \  / ___\|  |/    \_/ __ \  /    \  \/ /  _ \ /  _ \|  | \__  \  /    \   __\   |    |_/ __ \ /     \\____ \_/ __ \_  __ \__  \\   __\  |  \_  __ \_/ __ \ 
-            //     |        \   |  \/ /_/  >  |   |  \  ___/  \     \___(  <_> |  <_> )  |__/ __ \|   |  \  |     |    |\  ___/|  Y Y  \  |_> >  ___/|  | \// __ \|  | |  |  /|  | \/\  ___/ 
-            //    /_______  /___|  /\___  /|__|___|  /\___  >  \______  /\____/ \____/|____(____  /___|  /__|     |____| \___  >__|_|  /   __/ \___  >__|  (____  /__| |____/ |__|    \___  >
-            //            \/     \//_____/         \/     \/          \/                        \/     \/                    \/      \/|__|        \/           \/                        \/ 
-            //
-            // ID 0x427 byte 0 Engine Coolant Temperature
-            // ECT received from Barra PCM and then transmitted to Kombi for display on cluster
-            flagEngineCoolantOverTemperatureWarning = false;
-            int engineCoolantTemperature = ((int)buf[0] - 40);
-            if (engineCoolantTemperature > 0x64) // need to scale this number to reflect an overtemp condition
-            {
-                Serial.println("Warning: Engine Coolant Temperature High. + 140 Degrees C.");
-                flagEngineCoolantOverTemperatureWarning = true;
-            }
-            if (flagEngineCoolantOverTemperatureWarning == true)
-            {
-                // Flash Coolant OverHeat + Check Engine Light on Cluster.
-                int engineCoolantTemperatureCheckEngineLight = 0x01;
-                unsigned char flagEngineCoolantOverTemperatureWarningPre[8] = {0xABC, counterDataEctFlag, engineCoolantTemperatureCheckEngineLight, 0, 0, 0, 0, 0};
-                checksum = crc8.get_crc8(flagEngineCoolantOverTemperatureWarningPre, 8, 0x70, 1);
-                unsigned char flagEngineCoolantOverTemperatureWarning[8] = {checksum, counterDataEctFlag, engineCoolantTemperatureCheckEngineLight, 0, 0, 0, 0, 0}; //
-                CAN1.sendMsgBuf(0xABC, 0, 8, flagEngineCoolantOverTemperatureWarning);
-                counterDataEctFlag ++;
-                if (counterDataEctFlag == 0xF)
-                {
-                    counterDataEctFlag = 0x0;
-                }
-            }
-            unsigned char sendEngineCoolantTemperaturePre[8] = {0xABC, counterDataEct, engineCoolantTemperature, 0, 0, 0, 0, 0};
-            checksum = crc8.get_crc8(sendEngineCoolantTemperaturePre, 8, 0x70, 1);
-            unsigned char sendEngineCoolantTemperature[8] = {checksum, counterDataEct, engineCoolantTemperature, 0, 0, 0, 0, 0}; //
-            CAN1.sendMsgBuf(0xABC, 0, 8, sendEngineCoolantTemperature);
-            counterDataEct ++;
-            if (counterDataEct == 0xF)
-            {
-                counterDataEct = 0x0;
-            }
-            Serial.println("Engine Coolant Temperature Tx data.");
-            // ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-   
             // ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
             //      _____         .__   _____                    __  .__              .___            .___.__               __               .____    .__       .__     __   
             //     /     \ _____  |  |_/ ____\_ __  ____   _____/  |_|__| ____   ____ |   | ____    __| _/|__| ____ _____ _/  |_  ___________|    |   |__| ____ |  |___/  |_ 
@@ -621,76 +549,38 @@ void loop()
             // Bit 6 53 MIL_Lamp  0=off  1=on  2=flash     
             // Bit 7 54 AC_ShedLoad 0=NotDeployed;1=Deployed
             // Bit 8 55 DTC_Logging_HS 0=DoNotLog;1=LogDTCs 0000 0001
-            if ((int)buf[5] | buf[6] == 0x00)
+                // Check control messages
+            // These are complicated since the same CAN ID is used to show variety of messages
+            // Sending 0x29 on byte 4 sets the alert for the ID in byte 2, while sending 0x28 clears that message
+            // Known IDs:
+            // 34: check engine
+            // 35, 215: DSC
+            // 36: DSC OFF
+            // 24: Park brake error (yellow)
+            // 71: Park brake error (red)
+            // 77 Seat belt indicator
+            //if (doorOpen) {
+            //  uint8_t message[] = { 0x40, 0x0F, 34, 0x29, 0xFF, 0xFF, 0xFF, 0xFF };
+            //  CAN.sendMsgBuf(0x5c0, 0, 8, message);
+            //} else {
+            //  uint8_t message[] = { 0x40, 0x0F, 0x00, 0x28, 0xFF, 0xFF, 0xFF, 0xFF };
+            //  CAN.sendMsgBuf(0x5c0, 0, 8, message);
+            /////////////////////////////////////////////////////////////////////////////
+            int MilLampIlluminated = flagMilLampIlluminated ? 29 : 28;
+            if ((int)buf[5] | (int)buf[6] == 0x00)
             {
-                flagEngineOilPressureWarning = false;
-                flagEngineOilPressureWarningFlashing = false;
-                flagCruiseControlSet = false;
-                flagAlternatorFailureState = false;
-                flagEngineOverHeatWarning = false;
-                flagDiffLockWarning = false;
-                flagIdleMode = false;
-                flagAirConCompressor = false;
-                flagElectronicThrottleControlWarning = false;
-                flagElectronicThrottleControlWarningFlashing = false;
-                flagImmobilizerLamp = false;
-                flagImmobilizerLampFlashing = false;
-                flagAirConShedLoad = false;
-                flagDtcLoggingHighSpeedCan  = false;
                 flagMilLampIlluminated = false;
+                unsigned char milLampIlluminated[8] = {0x40, 0x0F, 0x00, MilLampIlluminated, 0xFF, 0xFF, 0xFF, 0xFF}; // MIL LAMP MESSAGE FOR KOMBI 
+                CAN1.sendMsgBuf(0x5C0, 0, 8, milLampIlluminated);               
+                Serial.println("[Barra PCM] MIL Lamp off.");   
             } 
-            else if ((int)buf[5] == 0x10)            
-            {
-                flagEngineOilPressureWarning = true;
-                int engineOilPressureWarningLight = 0x01;
-                unsigned char engineOilPressureWarningPre[8] = {0xABC, counterEngineOilPressureFlag, engineOilPressureWarningLight, 0, 0, 0, 0, 0};
-                checksum = crc8.get_crc8(engineOilPressureWarningPre, 8, 0x70, 1);
-                unsigned char engineOilPressureWarning[8] = {checksum, counterEngineOilPressureFlag, engineOilPressureWarningLight, 0, 0, 0, 0, 0}; // MIL LAMP MESSAGE FOR KOMBI 
-                CAN1.sendMsgBuf(0xABC, 0, 8, engineOilPressureWarning);
-                counterEngineOilPressureFlag ++;
-                if (counterEngineOilPressureFlag == 0xF)
-                {
-                    counterEngineOilPressureFlag = 0x0;
-                }
-                Serial.println("[Barra PCM] Engine Oil Pressure Warning.");   
-            }
-            else if ((int)buf[5] == 0x20)            
-            {
-                flagAlternatorFailureState = true;
-                int alternatorFailureStateLight = 0x01;
-                unsigned char alternatorFailureStatePre[8] = {0xABC, counterAlternatorFailureState, alternatorFailureStateLight, 0, 0, 0, 0, 0};
-                checksum = crc8.get_crc8(alternatorFailureStatePre, 8, 0x70, 1);
-                unsigned char alternatorFailureState[8] = {checksum, counterAlternatorFailureState, alternatorFailureStateLight, 0, 0, 0, 0, 0}; // MIL LAMP MESSAGE FOR KOMBI 
-                CAN1.sendMsgBuf(0xABC, 0, 8, alternatorFailureState);
-                counterAlternatorFailureState ++;
-                if (counterAlternatorFailureState == 0xF)
-                {
-                    counterAlternatorFailureState = 0x0;
-                }
-                Serial.println("[Barra PCM] Alternator Failure State.");   
-            }
-            else if ((int)buf[5] == 0x08)        // remove this as it is doubling up and the same function is above //    
-            {
-                flagEngineOverHeatWarning = true;
-                unsigned char engineOverHeatWarning[8] = {0, 0, 0, 0, 0, 0, 0, 0}; // MIL LAMP MESSAGE FOR KOMBI 
-                CAN1.sendMsgBuf(0xABC, 0, 8, engineOverHeatWarning);
-                Serial.println("[Barra PCM] Engine Over Heat Warning.");   
-            }
-            else if ((int)buf[6] == 0x02 | 0x03)            
+            else if ((int)buf[5] | (int)buf[6] ==  0x02 | 0x03 | 0x08 | 0x10 | 0x20)            
             {
                 // send can message to illuminate Kombi check engine light here
                 flagMilLampIlluminated = true;
-                int milLampIlluminatedFlag = 0x01;
-                unsigned char milLampIlluminatedPre[8] = {0xABC, counterMilLampIlluminated, milLampIlluminatedFlag, 0, 0, 0, 0, 0};
-                checksum = crc8.get_crc8(milLampIlluminatedPre, 8, 0x70, 1);
-                unsigned char milLampIlluminated[8] = {checksum, counterMilLampIlluminated, milLampIlluminatedFlag, 0, 0, 0, 0, 0}; // MIL LAMP MESSAGE FOR KOMBI 
-                CAN1.sendMsgBuf(0xABC, 0, 8, milLampIlluminated);
-                counterMilLampIlluminated ++;
-                if (counterMilLampIlluminated == 0xF)
-                {
-                    counterMilLampIlluminated = 0x0;
-                }
-
+                int checkEngineLight = 34;
+                unsigned char milLampIlluminated[8] = {0x40, 0x0F, checkEngineLight, milLampIlluminated, 0xFF, 0xFF, 0xFF, 0xFF}; // MIL LAMP MESSAGE FOR KOMBI 
+                CAN1.sendMsgBuf(0x5C0, 0, 8, milLampIlluminated);               
                 Serial.println("[Barra PCM] MIL Lamp Illuminated.");   
             }
             //delay(100); // one delay of 100 MS per CAN ID, not individual byte functions....too slow otherwise..lags
@@ -788,6 +678,7 @@ void loop()
         // \  \_/   \>    </    ^   /    |   \  \_/   \ /    |    \    |   \/        \  \        /|   Y  \  ___/\  ___/|  |__  /        \  |_> >  ___/\  ___// /_/ |   |  | (  <_> )  | \/  |    |   \     \____/    Y    \
         //  \_____  /__/\_ \____   ||______  /\_____  / \____|__  /______  /_______  /   \__/\  / |___|  /\___  >\___  >____/ /_______  /   __/ \___  >\___  >____ |   |__|  \____/|__|     |____|    \______  /\____|__  /
         //        \/      \/    |__|       \/       \/          \/       \/        \/         \/       \/     \/     \/               \/|__|        \/     \/     \/                                         \/         \/ // 
+        // NOT NEEDED AS TCM WILL SEND SPEED SIGNAL TO PCM VIA CAN
         // FALCON WHEEL SPEED SIGNAL:
         // Antilock Brake Module   Wheel Speed Sensor  4B0 8   
         // WheelSpeedFrontLeft Units:km/h   Offset:0;Multi:1;Div:100   0xFFFE=Initialization in progress   0xFFFF=Wheel Speed Faulted          
@@ -813,29 +704,29 @@ void loop()
         // V_WHL_RRH: 0km/h
         // ASSUMING THAT VEHICLE SPEED SOURCE IS SET TO 'ABS via CAN' with PCMTEC, WE NEED TO PROVIDE THAT SIGNAL FOR THE BARRA PCM VIA THE CANBUS
         // Recieve ABS individual wheel speed signals from BMW ABS module, and re-transmit on ID 0x4B0 for Barra PCM
-        if (canId2 == 0x0CE) // BMW WHEEL SPEED ID FROM ABS CAN1
-        {
-            int wheelSpeedFrontLeft1  = (int)buf[0]; // BMW DATA is * 0.0625
-            int wheelSpeedFrontLeft2  = (int)buf[1];
-            int wheelSpeedFrontRight1 = (int)buf[2];
-            int wheelSpeedFrontRight2 = (int)buf[3];
-            int wheelSpeedRearLeft1   = (int)buf[4];
-            int wheelSpeedRearLeft2   = (int)buf[5];
-            int wheelSpeedRearRight1  = (int)buf[6];
-            int wheelSpeedRearRight2  = (int)buf[7];
-            unsigned char wheelSpeedSignalData[8] = {wheelSpeedFrontLeft1, wheelSpeedFrontLeft2, wheelSpeedFrontRight1, wheelSpeedRearRight2, wheelSpeedRearLeft1, wheelSpeedRearLeft2, wheelSpeedRearRight1, wheelSpeedRearRight2}; //
-            CAN.sendMsgBuf(0x4B0, 0, 8, wheelSpeedSignalData);
-            Serial.println("ABS Wheel Speed Signal Data Tx on ID 0x4B0 for PCM.");
-            if ( wheelSpeedFrontLeft2 | wheelSpeedRearRight2 | wheelSpeedRearLeft2 | wheelSpeedRearRight2 == 0xFE)
-            {
-                Serial.println("ABS Wheel Speed Signal INITIALIZATION IN PROGRESS.");                
-            } 
-            else if (wheelSpeedFrontLeft1 | wheelSpeedFrontLeft2 | wheelSpeedFrontRight1 | wheelSpeedRearRight2 | wheelSpeedRearLeft1 | wheelSpeedRearLeft2 | wheelSpeedRearRight1 | wheelSpeedRearRight2 == 0xFF)
-            {
-                Serial.println("ABS Wheel Speed Signal ERROR INVALID DATA.");
-            }
-            //delay(100);   
-        }
+        //if (canId2 == 0x0CE) // BMW WHEEL SPEED ID FROM ABS CAN1
+        //{
+        //    int wheelSpeedFrontLeft1  = (int)buf[0]; // BMW DATA is * 0.0625
+        //    int wheelSpeedFrontLeft2  = (int)buf[1];
+        //    int wheelSpeedFrontRight1 = (int)buf[2];
+        //    int wheelSpeedFrontRight2 = (int)buf[3];
+        //    int wheelSpeedRearLeft1   = (int)buf[4];
+        //    int wheelSpeedRearLeft2   = (int)buf[5];
+        //    int wheelSpeedRearRight1  = (int)buf[6];
+        //    int wheelSpeedRearRight2  = (int)buf[7];
+        //    unsigned char wheelSpeedSignalData[8] = {wheelSpeedFrontLeft1, wheelSpeedFrontLeft2, wheelSpeedFrontRight1, wheelSpeedRearRight2, wheelSpeedRearLeft1, wheelSpeedRearLeft2, wheelSpeedRearRight1, wheelSpeedRearRight2}; //
+        //    CAN.sendMsgBuf(0x4B0, 0, 8, wheelSpeedSignalData);
+        //    Serial.println("ABS Wheel Speed Signal Data Tx on ID 0x4B0 for PCM.");
+        //    if ( wheelSpeedFrontLeft2 | wheelSpeedRearRight2 | wheelSpeedRearLeft2 | wheelSpeedRearRight2 == 0xFE)
+        //    {
+        //        Serial.println("ABS Wheel Speed Signal INITIALIZATION IN PROGRESS.");                
+        //    } 
+        //    else if (wheelSpeedFrontLeft1 | wheelSpeedFrontLeft2 | wheelSpeedFrontRight1 | wheelSpeedRearRight2 | wheelSpeedRearLeft1 | wheelSpeedRearLeft2 | wheelSpeedRearRight1 | wheelSpeedRearRight2 == 0xFF)
+        //    {
+        //        Serial.println("ABS Wheel Speed Signal ERROR INVALID DATA.");
+        //    }
+        //    //delay(100);   
+        //}
     }
 }
 /*********************************************************************************************************
